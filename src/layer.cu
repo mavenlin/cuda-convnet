@@ -278,7 +278,8 @@ WeightLayer::WeightLayer(ConvNet* convNet, PyObject* paramsDict, bool trans, boo
         int srcLayerIdx = weightSourceLayerIndices[i];
         int matrixIdx = weightSourceMatrixIndices[i];
         if (srcLayerIdx == convNet->getNumLayers()) { // Current layer
-            _weights.addWeights(*new Weights(_weights[matrixIdx], epsW[i]));
+            // This constructor does not create intrisic data, but shares the data from the other matrix.
+            _weights.addWeights(*new Weights(_weights[matrixIdx], epsW[i])); 
         } else if (srcLayerIdx >= 0) {
             WeightLayer& srcLayer = *static_cast<WeightLayer*>(&convNet->getLayer(srcLayerIdx));
             Weights* srcWeights = &srcLayer.getWeights(matrixIdx);
@@ -304,9 +305,14 @@ WeightLayer::WeightLayer(ConvNet* convNet, PyObject* paramsDict, bool trans, boo
 }
 
 void WeightLayer::bpropCommon(NVMatrix& v, PASS_TYPE passType) {
+    // For all the layers based on weightlayer, there are weights and biases.
+    // Thus it is common for all the layers to do backpropergation on the biases and weights.
     if (_biases->getEps() > 0) {
         bpropBiases(v, passType);
     }
+
+    // There is one weight matrix for each of the inputs from the previous layer.
+    // So iterate all of them.
     for (int i = 0; i < _weights.getSize(); i++) {
         if (_weights[i].getEps() > 0) {
             bpropWeights(v, i, passType);
@@ -338,7 +344,8 @@ void WeightLayer::checkGradients() {
     _convNet->checkGradient(_name + " biases", _bStep, *_biases);
 }
 
-Weights& WeightLayer::getWeights(int idx) {
+Weights& WeightLayer::getWeights(int idx) { 
+    // get the weights of the idx th input.
     return _weights[idx];
 }
 
@@ -365,19 +372,26 @@ void FCLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE p
     delete &weights_T;
 }
 
-void FCLayer::bpropBiases(NVMatrix& v, PASS_TYPE passType) {
+void FCLayer::bpropBiases(NVMatrix& v, PASS_TYPE passType) { 
+    // Is the numCases the number of samples ? 
+    // Seems possible. If so, how does the other layers whose output for a single sample is a matrix pass the matrix of multiple samples?
+    // Are they all unfolded to a vector?
     int numCases = v.getNumRows();
     float scaleBGrad = passType == PASS_GC ? 1 : _biases->getEps() / numCases;
     _biases->getGrad().addSum(v, 0, 0, scaleBGrad);
 }
 
 void FCLayer::bpropWeights(NVMatrix& v, int inpIdx, PASS_TYPE passType) {
+
+    // Judging from this function and the above one, each row of the matrix v is a sample.
+    // Which means that it is quite possible that all the inputs and outputs are unfolded version of the activations.
     int numCases = v.getNumRows();
 
     NVMatrix& prevActs_T = _prev[inpIdx]->getActs().getTranspose();
     float scaleInc = (_weights[inpIdx].getNumUpdates() == 0 && passType != PASS_GC) * _weights[inpIdx].getMom();
     float scaleGrad = passType == PASS_GC ? 1 : _weights[inpIdx].getEps() / numCases;
     
+    // Why scale the increase by the Weight momentem? Does it mean that weightsinc is never added to the weight before the current batch of training finishes?
     _weights[inpIdx].getInc().addProduct(prevActs_T, v, scaleInc, scaleGrad);
     
     delete &prevActs_T;
@@ -390,6 +404,8 @@ void FCLayer::bpropWeights(NVMatrix& v, int inpIdx, PASS_TYPE passType) {
  */
 LocalLayer::LocalLayer(ConvNet* convNet, PyObject* paramsDict, bool useGrad) 
     : WeightLayer(convNet, paramsDict, false, useGrad) {
+
+        // Initialize the variables supplied.
     _padding = pyDictGetIntV(paramsDict, "padding");
     _stride = pyDictGetIntV(paramsDict, "stride");
     _filterSize = pyDictGetIntV(paramsDict, "filterSize");
