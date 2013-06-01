@@ -49,31 +49,42 @@
  * It only loads 16 weights at a time, so those aren't fully coalesced.
  * This version conserves shared memory by loading 16 filters at a time rather than 32.
  */
+
+ // In this function blockIdxX determines the case id, namely which samples to calculate.
+ // Each BlockIdxX will calculate 16 threadsX * imgsPerThread.
+ // The BlockIdxY will determine the subregion of the images. The image is divided up into 4x4 subregions.
+ // The x and y idx of the subregion is calculated from the blockidxY
 template <int imgsPerThread, int numColors, bool scale, bool checkCaseBounds, bool conv>
 __global__ void img_acts_color(const float* hidActs, const float* filters, float* targets,
                                    const int numModulesY, const int numModulesX, const int numImages, const int numFilters,
                                    const int filterSize, const int imgSizeY, const int imgSizeX,
                                    const int paddingStart, const int moduleStride,
                                    const float scaleTargets, const float scaleOutputs) {
+    // For 16 filters and 16 activations
     __shared__ float shFilters[numColors*16][16 + 1];
     __shared__ float shHidActs[16][16*imgsPerThread];
 
-    const int blockCaseIdx = blockIdx.x * 16*imgsPerThread;
-    const int numRegionsX = DIVUP(imgSizeX, 4);
+    const int blockCaseIdx = blockIdx.x * 16*imgsPerThread; // case index, for different samples.
+    const int numRegionsX = DIVUP(imgSizeX, 4); // divide into regions of 4x4 in the target image
     const int blockRegionIdx = blockIdx.y;
     const int blockRegionIdxX = blockRegionIdx % numRegionsX;
     const int blockRegionIdxY = blockRegionIdx / numRegionsX;
     const int blockRegionLeft = blockRegionIdxX * 4;
     const int blockRegionTop = blockRegionIdxY * 4;
+
+    // PixelY in region is determined by the threadsIdxY. The threads are 16x16, thus threadY idx will cover the 4x4 region.
     const int pxYInRegion = threadIdx.y / 4, pxXInRegion = threadIdx.y % 4;
     const int pxY = blockRegionTop + pxYInRegion;
     const int pxX = blockRegionLeft + pxXInRegion;
     const int pxIdx = pxY * imgSizeX + pxX;
+
+    // In case it goes out of bound inside the target image. (Full convolution)
     const bool isPxInImg = pxY < imgSizeY && pxX < imgSizeX;
+
     const int numModules = numModulesY * numModulesX;
     const int filterPixels = filterSize * filterSize;
     const int imgPixels = imgSizeX * imgSizeY;
-    const int tidx = threadIdx.y * 16 + threadIdx.x;
+    const int tidx = threadIdx.y * 16 + threadIdx.x; // thread index, do not know what for.
     const int loadY = tidx / 32, loadX = tidx % 32;
 
     hidActs += blockCaseIdx + loadY * numImages * numModules + loadX;
@@ -389,6 +400,7 @@ __global__ void img_acts_mediumcolor(const float* hidActs, const float* filters,
  * 
  * To be used when there are >= 16 color channels.
  */
+ // <4, 32, 4, 4, false, true, true>
 template <int B_Y, int B_X, int imgsPerThread, int colorsPerThread, bool scale, bool checkCaseBounds, bool conv>
 __global__ void conv_img_acts_manycolor(const float* hidActs, const float* filters, float* targets,
                                           const int numModulesY, const int numModulesX, const int numImages, const int numFilters,
@@ -398,13 +410,19 @@ __global__ void conv_img_acts_manycolor(const float* hidActs, const float* filte
     __shared__ float shFilters[colorsPerThread*B_Y][16 + 1]; // TODO: perhaps reconsider this 16
     __shared__ float shHidActs[16][B_X*imgsPerThread];
 
-    const int numImgBlocks = DIVUP(numImages,B_X*imgsPerThread);
-    const int blockCaseIdx = (blockIdx.x % numImgBlocks) * B_X*imgsPerThread;
-    
+    // Block size X times imgPerthread, means the number of images one block can process.
+    // divup means how many of the blocks in total we need to process those images.
+    const int numImgBlocks = DIVUP(numImages,B_X*imgsPerThread); 
+    const int blockCaseIdx = (blockIdx.x % numImgBlocks) * B_X*imgsPerThread; // base for the image index of the current block
+
+    // Color base index of the chunk
     const int imgColorIdx = (blockIdx.x / numImgBlocks) * B_Y*colorsPerThread; // color idx globally
+
     const int numFilterColors = numImgColors / numGroups;
-    const int blockGroupIdx = imgColorIdx / numFilterColors;
-    const int filterColorIdx = imgColorIdx % numFilterColors; // color idx within group
+    const int blockGroupIdx = imgColorIdx / numFilterColors; // Get the group index of the current block. 
+
+    const int filterColorIdx = imgColorIdx % numFilterColors; // base color index within one group
+
     const int numFiltersPerGroup = numFilters / numGroups;
     const int blockFilterIdx = blockGroupIdx * numFiltersPerGroup;
 
@@ -414,13 +432,32 @@ __global__ void conv_img_acts_manycolor(const float* hidActs, const float* filte
 
     const int filterPixels = filterSize * filterSize;
     const int imgPixels = imgSizeY * imgSizeX;
+
+    // Within this block The thread index has not be used yet.
     const int tidx = threadIdx.y * B_X + threadIdx.x;
     const int hidActLoadY = tidx / 32, hidActLoadX = tidx % 32;
     const int filtersLoadY = tidx / 16, filtersLoadX = tidx % 16;
     const int numModules = numModulesY * numModulesX;
 
+    // The first term and last term together makes the index of the sample.
+    // Because 32 images are loaded at one time.
+    // The second and third term:
+    // The third term is the size of one module.
     hidActs += blockCaseIdx + (blockFilterIdx + hidActLoadY) * numImages * numModules + hidActLoadX;
+    
+    // 
     filters += blockFilterIdx + (filterColorIdx + filtersLoadY) * filterPixels * numFilters + filtersLoadX;
+
+    // Analyse this first
+    // The _trans property of the targets is not trans.
+    // Although each column is a sample, the whole matrix in memory is in the row major order.
+    // blockPixelIdx * numImages + blockCaseIdx + threadIdx.x
+    // is the pixel index times the number of rows plus the sample index
+    // blockCaseIdx is the base index of the samples. Plus the threadIdx.x, it seems one thread handles one image at a time, 
+    // and the neighboring threads are continuous in sample index.
+    // each thread y is a index of the imagecolor. Continously.
+    // So the target consists of row blocks, each block is of size ( imgPixels * numImages )
+    // And there are numImageColors Blocks. Note that this goes the reverse direction. Thus the target has numIamgeColors Channels.
     targets += (imgColorIdx + threadIdx.y) * imgPixels * numImages + blockPixelIdx * numImages + blockCaseIdx + threadIdx.x;
 
     float prod[colorsPerThread][imgsPerThread];

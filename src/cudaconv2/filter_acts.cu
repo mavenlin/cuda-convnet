@@ -566,9 +566,10 @@ __global__ void filterActs_YxX_sparse_random(float* images, float* filters, floa
                    int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                    int numImgColors, int numGroups,
                    float scaleTargets, float scaleOutput, bool conv) {
-    int numFilterColors = numImgColors / numGroups;      
-    int numFilters = filters.getNumCols();
-    int numModules = numModulesY * numModulesX;
+    int numFilterColors = numImgColors / numGroups;      // defines how many channels a filter looks at
+    int numFilters = filters.getNumCols(); // the filters matrix contains the number of filters columns.
+    int numModules = numModulesY * numModulesX; // The number of output 
+    // The images matrix stores the each image as a column.
     int numImages = images.getNumCols();
     int imgPixels = images.getNumRows()/numImgColors;
     int imgSizeX = imgPixels / imgSizeY;

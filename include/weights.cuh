@@ -149,6 +149,7 @@ public:
     // Scale your gradient by epsW / numCases!
     void update() {
         // Only true owner of weights updates
+        // So that the weights will be updated only once.
         if (_srcWeights == NULL && _epsW > 0) {
             assert(_onGPU);
             if (_useGrad) {

@@ -653,14 +653,15 @@ class WeightLayerParser(LayerWithInputParser):
     @staticmethod
     def unshare_weights(layer, layers, matrix_idx=None):
         def unshare(layer, layers, indices):
-            for i in indices:
+            for i in indices: # weightSourceLayerIndices contains the indices of the layers that this current layer shares its weight from.
+                              # weightSourceMatrixIndices contains the index of the weight in the source layer. Because in the source layers there are also serveral matrices.
                 if layer['weightSourceLayerIndices'][i] >= 0:
-                    src_name = layers[layer['weightSourceLayerIndices'][i]]['name']
+                    src_numInputsname = layers[layer['weightSourceLayerIndices'][i]]['name']
                     src_matrix_idx = layer['weightSourceMatrixIndices'][i]
                     layer['weightSourceLayerIndices'][i] = -1
                     layer['weightSourceMatrixIndices'][i] = -1
-                    layer['weights'][i] = layer['weights'][i].copy()
-                    layer['weightsInc'][i] = n.zeros_like(layer['weights'][i])
+                    layer['weights'][i] = layer['weights'][i].copy() # originally it shares from another place, but now, it makes a copy of the original one.
+                    layer['weightsInc'][i] = n.zeros_like(layer['weights'][i]) # allocate for one.
                     print "Unshared weight matrix %s[%d] from %s[%d]." % (layer['name'], i, src_name, src_matrix_idx)
                 else:
                     print "Weight matrix %s[%d] already unshared." % (layer['name'], i)
@@ -685,6 +686,8 @@ class WeightLayerParser(LayerWithInputParser):
     def make_weights(self, initW, rows, cols, order='C'):
         dic = self.dic
         dic['weights'], dic['weightsInc'] = [], []
+
+        # If we do not need to initialize the weights in a special way, then ignore the if go to else
         if dic['initWFunc']: # Initialize weights from user-supplied python function
             # Initialization function is supplied in the format
             # module.func
@@ -703,14 +706,22 @@ class WeightLayerParser(LayerWithInputParser):
                 print "Layer '%s[%d]' initialized weight matrices from function %s" % (dic['name'], i, dic['initWFunc'])
         else:
             for i in xrange(len(dic['inputs'])):
+                # if the weights are shared from another layer.
                 if dic['weightSourceLayerIndices'][i] >= 0: # Shared weight matrix
+                    # First find the source layer, the source lay should come earlier than the current.
+                    # Thus obtain the source layer from the prev_layers
                     src_layer = self.prev_layers[dic['weightSourceLayerIndices'][i]] if dic['weightSourceLayerIndices'][i] < len(self.prev_layers) else dic
+                    # Add the pointer to the source layer's weight to current layers weights.
                     dic['weights'] += [src_layer['weights'][dic['weightSourceMatrixIndices'][i]]]
+                    # The weightsInc is also shared.
                     dic['weightsInc'] += [src_layer['weightsInc'][dic['weightSourceMatrixIndices'][i]]]
+
+                    # If the weight sharing is illegal, namely the source layer has a weight matrix of a different size.
                     if dic['weights'][i].shape != (rows[i], cols[i]):
                         raise LayerParsingError("Layer '%s': weight sharing source matrix '%s' has shape %dx%d; should be %dx%d." 
                                                 % (dic['name'], dic['weightSource'][i], dic['weights'][i].shape[0], dic['weights'][i].shape[1], rows[i], cols[i]))
                     print "Layer '%s' initialized weight matrix %d from %s" % (dic['name'], i, dic['weightSource'][i])
+                # If the weights are not shared, then initialize a weight matrix for each of the inputs of this layer.
                 else:
                     dic['weights'] += [n.array(initW[i] * nr.randn(rows[i], cols[i]), dtype=n.single, order=order)]
                     dic['weightsInc'] += [n.zeros_like(dic['weights'][i])]
@@ -769,6 +780,8 @@ class WeightLayerParser(LayerWithInputParser):
                 if src_layer_name == name and src_layer_matrix_idx >= i:
                     raise LayerParsingError("Layer '%s': weight sharing source '%s[%d]' not defined yet." % (name, name, src_layer_matrix_idx))
 
+            # They are finally stored in the weightSourceLayerIndices and weightSourceMatrixIndices.
+            # If they are not shared, then the value will be -1. In makeweights a new space will be allocated for it.
             dic['weightSourceLayerIndices'] += [src_layer_idx]
             dic['weightSourceMatrixIndices'] += [src_layer_matrix_idx]
                 
@@ -785,11 +798,16 @@ class FCLayerParser(WeightLayerParser):
         dic['outputs'] = mcp.safe_get_int(name, 'outputs')
         
         self.verify_num_range(dic['outputs'], 'outputs', 1, None)
-        self.make_weights(dic['initW'], dic['numInputs'], [dic['outputs']] * len(dic['numInputs']), order='F')  # [dic['outputs']] * len(dic['numInputs']  [5]*2 = [5,5]
+        
+        # Using the make weights function of the WeightLayer. Then how does the locally connected layer use the weightlayer's function?
+        self.make_weights(dic['initW'], dic['numInputs'], [dic['outputs']] * len(dic['numInputs']), order='F')
         self.make_biases(1, dic['outputs'], order='F')
+
         print "Initialized fully-connected layer '%s', producing %d outputs" % (name, dic['outputs'])
         return dic
 
+
+# Local Layer itself is not a usable layer, but its subclasses like localunsharedlayer and convlayer are.
 class LocalLayerParser(WeightLayerParser):
     def __init__(self):
         WeightLayerParser.__init__(self)
@@ -878,12 +896,20 @@ class LocalLayerParser(WeightLayerParser):
         
         # Computed values
         dic['imgPixels'] = [numInputs/channels for numInputs,channels in zip(dic['numInputs'], dic['channels'])]
+        # The input image is expected to be square.
         dic['imgSize'] = [int(n.sqrt(imgPixels)) for imgPixels in dic['imgPixels']]
+
         self.verify_num_range(dic['imgSize'], 'imgSize', 1, None)
+
+        # If there are 5 groups, and the specified filter number is 3 then there are in total 3*5=15 filters.
         dic['filters'] = [filters*groups for filters,groups in zip(dic['filters'], dic['groups'])]
+        # filterPixel Number is equal to filterSize^2. Filter is square.
         dic['filterPixels'] = [filterSize**2 for filterSize in dic['filterSize']]
+
+        # What is the so called Module? From here we can see that the moduleX is the x length of the output of the convolution.
         dic['modulesX'] = [1 + int(ceil((2 * padding + imgSize - filterSize) / float(stride))) for padding,imgSize,filterSize,stride in zip(dic['padding'], dic['imgSize'], dic['filterSize'], dic['stride'])]
 
+        # Each group of the filters only look at some of the input channels. This calculates how many channels each of the filter looks at.
         dic['filterChannels'] = [channels/groups for channels,groups in zip(dic['channels'], dic['groups'])]
         if max(dic['randSparse']): # When randSparse is turned on for any input, filterChannels must be given for all of them
             dic['filterChannels'] = mcp.safe_get_int_list(name, 'filterChannels', default=dic['filterChannels'])
@@ -892,19 +918,29 @@ class LocalLayerParser(WeightLayerParser):
         if len(set(dic['modulesX'])) != 1 or len(set(dic['filters'])) != 1:
             raise LayerParsingError("Layer '%s': all inputs must produce equally-dimensioned output. Dimensions are: %s." % (name, ", ".join("%dx%dx%d" % (filters, modulesX, modulesX) for filters,modulesX in zip(dic['filters'], dic['modulesX']))))
 
-        dic['modulesX'] = dic['modulesX'][0]
-        dic['modules'] = dic['modulesX']**2
-        dic['filters'] = dic['filters'][0]
+
+        # previously all the below arrays contains the corresponding parameter for each of the inputs to the convolutional layer.
+        # Two possibilities here:
+        # 1. Now we decide that these parameters should be all the same for any of the inputs. Thus we take the first one.
+        # 2. There is only one input, though it is read in as list.
+        dic['modulesX'] = dic['modulesX'][0] # modulesX is the x size of the output of convolution.
+        dic['modules'] = dic['modulesX']**2 # Size
+        dic['filters'] = dic['filters'][0] # filter number
+        
+        # every filter will generate a feature map as a output.
+        # And the size of the output is the size of the module.
         dic['outputs'] = dic['modules'] * dic['filters']
         dic['filterConns'] = [[]] * len(dic['inputs'])
+        
         for i in xrange(len(dic['inputs'])):
+            # Check for errors 
             if dic['numInputs'][i] % dic['imgPixels'][i] != 0 or dic['imgSize'][i] * dic['imgSize'][i] != dic['imgPixels'][i]:
                 raise LayerParsingError("Layer '%s[%d]': has %-d dimensional input, not interpretable as square %d-channel images" % (name, i, dic['numInputs'][i], dic['channels'][i]))
             if dic['channels'][i] > 3 and dic['channels'][i] % 4 != 0:
                 raise LayerParsingError("Layer '%s[%d]': number of channels must be smaller than 4 or divisible by 4" % (name, i))
             if dic['filterSize'][i] > 2 * dic['padding'][i] + dic['imgSize'][i]:
                 raise LayerParsingError("Layer '%s[%d]': filter size (%d) greater than image size + 2 * padding (%d)" % (name, i, dic['filterSize'][i], 2 * dic['padding'][i] + dic['imgSize'][i]))
-        
+            
             if dic['randSparse'][i]: # Random sparse connectivity requires some extra checks
                 if dic['groups'][i] == 1:
                     raise LayerParsingError("Layer '%s[%d]': number of groups must be greater than 1 when using random sparse connectivity" % (name, i))
@@ -934,12 +970,17 @@ class ConvLayerParser(LocalLayerParser):
         dic['partialSum'] = mcp.safe_get_int(name, 'partialSum')
         dic['sharedBiases'] = mcp.safe_get_bool(name, 'sharedBiases', default=True)
 
-        if dic['partialSum'] != 0 and dic['modules'] % dic['partialSum'] != 0:
+        # what is partial sum?
+        if dic['partialSum'] != 0 and dic['modules'] % dic['partialSum'] != 0: 
             raise LayerParsingError("Layer '%s': convolutional layer produces %dx%d=%d outputs per filter, but given partialSum parameter (%d) does not divide this number" % (name, dic['modulesX'], dic['modulesX'], dic['modules'], dic['partialSum']))
 
         num_biases = dic['filters'] if dic['sharedBiases'] else dic['modules']*dic['filters']
 
         eltmult = lambda list1, list2: [l1 * l2 for l1,l2 in zip(list1, list2)]
+
+        # make weights, first size param is the dimension of the input data. The second contains that of the output data.
+        # So the weights is multiplied to a patch of the images of all channels.
+        # The output is a vector. The length is the number of the filters. It only contains one pixel of the output map.
         self.make_weights(dic['initW'], eltmult(dic['filterPixels'], dic['filterChannels']), [dic['filters']] * len(dic['inputs']), order='C')
         self.make_biases(num_biases, 1, order='C')
 
@@ -955,11 +996,14 @@ class LocalUnsharedLayerParser(LocalLayerParser):
 
         eltmult = lambda list1, list2: [l1 * l2 for l1,l2 in zip(list1, list2)]
         scmult = lambda x, lst: [x * l for l in lst]
+
+        # This time the weights is different from the convlayer.
+        # modules is the number of pixels in each of the feature maps, it is also the number of underlying local connections.
         self.make_weights(dic['initW'], scmult(dic['modules'], eltmult(dic['filterPixels'], dic['filterChannels'])), [dic['filters']] * len(dic['inputs']), order='C')
         self.make_biases(dic['modules'] * dic['filters'], 1, order='C')
         
         print "Initialized locally-connected layer '%s', producing %dx%d %d-channel output" % (name, dic['modulesX'], dic['modulesX'], dic['filters'])
-        return dic  
+        return dic
     
 class DataLayerParser(LayerParser):
     def __init__(self):
