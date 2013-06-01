@@ -200,10 +200,12 @@ __global__ void kEltwiseUnaryOpTrans(const float* a, float* const dest,
 template<class Op>
 __global__ void kEltwiseUnaryOp(const float* a, float* const dest, const uint height, const uint width,
                                 const uint strideA, const uint strideDest, Op op) {
-    const uint idxX = blockIdx.x * ELTWISE_THREADS_X + threadIdx.x;
+    const uint idxX = blockIdx.x * ELTWISE_THREADS_X + threadIdx.x; // What If the Width is larger than BLOCK_NUM_X * ELTWISE_THREADS_X
     const uint idxY = blockIdx.y * ELTWISE_THREADS_Y + threadIdx.y;
 
-    for (uint y = idxY; y < height; y += gridDim.y * ELTWISE_THREADS_Y) {
+	// The following for loop handles the case where the height and width is large and can not be processed in one run in the grid
+	// If the dimension is small, the for loop will only run once.
+    for (uint y = idxY; y < height; y += gridDim.y * ELTWISE_THREADS_Y) { // GridDim is the dimension of the current grid, namely how many rows and cols of blocks is in this grid.
         for (uint x = idxX; x < width; x += gridDim.x * ELTWISE_THREADS_X) {
             dest[y * strideDest + x] = op(a[y * strideA + x]);
         }

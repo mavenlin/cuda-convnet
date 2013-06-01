@@ -117,34 +117,38 @@ public:
  * threadIdx.x determines img idx
  * threadIdx.y determines filter idx
  * 
- * imgs:        (numFilters, imgPixels, numImages)
- * target:      (numFilters, numOutputs, numImages)
+ * imgs:        (numFilters, imgPixels, numImages)  numFilters is numFeatureMaps of the input
+ * target:      (numFilters, numOutputs, numImages) numFilters is numFeatureMaps of the output
+ *                                                  because this is pooling, the numbers of inputs and outputs are equal.
  * 
  * numImages must be divisible by B_X*imgsPerThread if checkCaseBounds is false
  */
+
+
+// B_X and B_Y is the Block size, It may be the index of threads .
 
 template<class Agg, int B_Y, int B_X, int imgsPerThread, int filtersPerThread, bool checkCaseBounds>
 __global__ void kLocalPool(float* imgs, float* target, const int imgSize, const int numFilters,
                            const int numImages, const int subsX, const int startX, const int strideX,
                            const int outputsX, Agg agg) {
-    const int numImgBlocks = DIVUP(numImages,B_X*imgsPerThread);
+    const int numImgBlocks = DIVUP(numImages,B_X*imgsPerThread); 
     const int numFilterBlocks = DIVUP(numFilters, B_Y*filtersPerThread);
-    const int outputIdxX = blockIdx.x / numImgBlocks;
-    const int outputIdxY = blockIdx.y / numFilterBlocks;
-    const int blockImgIdx = (blockIdx.x % numImgBlocks) * B_X * imgsPerThread;
-    const int blockFilterIdx = (blockIdx.y % numFilterBlocks) * B_Y * filtersPerThread;
-    const int myFilterIdx = (blockFilterIdx + threadIdx.y*filtersPerThread);
+    const int outputIdxX = blockIdx.x / numImgBlocks; // ?? what if there is not enough blockIdx.x ?
+    const int outputIdxY = blockIdx.y / numFilterBlocks;  // Same question ?
+    const int blockImgIdx = (blockIdx.x % numImgBlocks) * B_X * imgsPerThread;  // The index of the first image processed by the current block. (the first because the index starts from 0)
+    const int blockFilterIdx = (blockIdx.y % numFilterBlocks) * B_Y * filtersPerThread; // The index of the first filter processed by the current block. (the first because the index starts from 0)
+    const int myFilterIdx = (blockFilterIdx + threadIdx.y*filtersPerThread); // Plus the index inside of the block. the first filter processed in the current threadIdx.
     if (myFilterIdx >= numFilters) {
-        return;
+        return; // If the cycles where myfilter index is larger than the number of the filters , that means all the filters have been calculated, and the current index is not necessary.
     }
     
-    const int outputIdx = outputIdxY * outputsX + outputIdxX;
-    const int numOutputs = outputsX * outputsX;
-    const int imgPixels = imgSize * imgSize;
+    const int outputIdx = outputIdxY * outputsX + outputIdxX; // outputsX means the number of rows which is equal to the number of columns if the images are resize to a square.
+    const int numOutputs = outputsX * outputsX; // The size of each output feature map.
+    const int imgPixels = imgSize * imgSize;    // this is the size of the input image.
     
-    const int startImgPxX = startX + outputIdxX * strideX;
-    const int startImgPxY = startX + outputIdxY * strideX;
-    const int imgIdx = blockImgIdx + threadIdx.x;
+    const int startImgPxX = startX + outputIdxX * strideX; // start x and start y value of local patch in the input image.
+    const int startImgPxY = startX + outputIdxY * strideX; 
+    const int imgIdx = blockImgIdx + threadIdx.x; // The same as my filter index why not times images per thread?
     
     imgs += myFilterIdx * imgPixels * numImages + imgIdx;
     target += (myFilterIdx * numOutputs + outputIdx) * numImages + imgIdx;

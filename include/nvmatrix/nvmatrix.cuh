@@ -82,7 +82,7 @@ private:
         /*
          * not a typo! return opposite character because a
          * non-transposed krizhevsky matrix is in row-major order while a non-transposed
-         * cublas matrix is in column-major order.
+         * cublas matrix is in column-major order. [|||]
          */
         return _isTrans ? 'n' : 't';
     }
@@ -117,7 +117,7 @@ public:
     /*
      * DO NOT DEREFERENCE IN HOST CODE! This is a device memory pointer.
      */
-    float* getCellPtr(int i, int j) const {
+    float* getCellPtr(int i, int j) const { // If _istrans then the memory is a column concatenation of the matrix, else it is row concatenation.
         if (_isTrans) {
             return &_devData[j * _numRows + i];
         }
@@ -145,7 +145,7 @@ public:
     }
 
     int getLeadingDim() const {
-        return _isTrans ? _numRows : _numCols;
+        return _isTrans ? _numRows : _numCols; // If normal it is the  column numbers
     }
 
     int getFollowingDim() const {
@@ -160,7 +160,7 @@ public:
         return _isTrans;
     }
 
-    bool isView() const {
+    bool isView() const { // if isView, the object is a view of the data, but does not own the data.
         return !_ownsData;
     }
 

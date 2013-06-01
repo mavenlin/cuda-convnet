@@ -67,18 +67,18 @@ protected:
     // Inputs and outputs potentially point to the same matrix, depending on the neuron
     NVMatrix* _inputs, *_outputs; 
     virtual void _activate() {
-        if (_inputs != _outputs) {
-            _inputs->copy(*_outputs);
+        if (_inputs != _outputs) { // They do not share the same memory
+            _inputs->copy(*_outputs); // Here copy means copy to, but not copy from.
         }
     }
     virtual void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
-        if (&target != &actsGrad) {
-            actsGrad.copy(target);
+        if (&target != &actsGrad) { // They do not share the same memory.
+            actsGrad.copy(target); // Copy to target. Copy gradient of activation to target.
         }
     }
     virtual void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
-        if (&target != &actsGrad) {
-            target.add(actsGrad);
+        if (&target != &actsGrad) { // They do not share the same memory
+            target.add(actsGrad); // Add the gradient of the activation to the target. The target may get gradient from multiple places.
         }
     }
 public:
@@ -94,7 +94,7 @@ public:
     virtual void computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, bool add) {
         assert(_activated);
         if (!add) {
-            target.resize(actsGrad);
+            target.resize(actsGrad); // resize target to the size of actsGrad
             _computeInputGrad(actsGrad, target);
         } else {
             _addInputGrad(actsGrad, target);

@@ -43,11 +43,13 @@ __device__ inline float square(const float a) {
  * weights: (numModules, numColors, filterPixels, numFilters)
  * Not fully coalesced if B_X < 32, so use cache.
  */
+
+ // This function normalizes the weights of each convolutional kernel.
 template <int B_Y, int B_X, int filtersPerThread>
 __global__ void kNormalizeLCWeights(float* weights, const uint numFilters, const int numModules, const uint weightsPerFilter, const float norm) {
     const uint moduleIdx = B_Y * blockIdx.y + threadIdx.y;
     const uint filterIdx = B_X * blockIdx.x + threadIdx.x;
-    
+    // So the module index is the index of the output map. The filter index is the index of the input map.
     float prod[filtersPerThread];
     #pragma unroll
     for (uint i = 0; i < filtersPerThread; ++i) {

@@ -785,7 +785,7 @@ class FCLayerParser(WeightLayerParser):
         dic['outputs'] = mcp.safe_get_int(name, 'outputs')
         
         self.verify_num_range(dic['outputs'], 'outputs', 1, None)
-        self.make_weights(dic['initW'], dic['numInputs'], [dic['outputs']] * len(dic['numInputs']), order='F')
+        self.make_weights(dic['initW'], dic['numInputs'], [dic['outputs']] * len(dic['numInputs']), order='F')  # [dic['outputs']] * len(dic['numInputs']  [5]*2 = [5,5]
         self.make_biases(1, dic['outputs'], order='F')
         print "Initialized fully-connected layer '%s', producing %d outputs" % (name, dic['outputs'])
         return dic

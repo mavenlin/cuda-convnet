@@ -118,7 +118,7 @@ NVMatrix::NVMatrix(float* devData, int numRows, int numCols, int stride, bool is
     _ownsData(false),
     _devData(devData),
     _isTrans(isTrans) {
-    _stride = stride < 0 ? getLeadingDim() : stride;
+    _stride = stride < 0 ? getLeadingDim() : stride; // Leading Dim is the row number
 }
 
 NVMatrix::~NVMatrix() {

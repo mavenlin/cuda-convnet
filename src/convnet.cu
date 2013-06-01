@@ -211,6 +211,7 @@ void ConvNet::bprop(PASS_TYPE passType) {
 void ConvNet::fprop(PASS_TYPE passType) {
     assert(_data != NULL);
     reset();
+	// propergate from the datalayer.
     for (int i = 0; i < _dataLayers.size(); i++) {
         _dataLayers[i]->fprop(_data->getData(), passType);
     }
@@ -224,7 +225,9 @@ void ConvNet::fprop(GPUData& data, PASS_TYPE passType) {
     fprop(passType);
 }
 
+// pass type is train or test
 void ConvNet::fprop(int miniIdx, PASS_TYPE passType) {
+	// According to the miniIdx parameter, setup the _data variable. Then training of the net can be done on the minibatch.
     delete _data;
     _data = &_dp->getMinibatch(miniIdx);
     fprop(passType);
