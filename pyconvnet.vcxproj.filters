@@ -1,0 +1,145 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="include\common\matrix.h">
+      <Filter>Header Files\Default</Filter>
+    </ClInclude>
+    <ClInclude Include="include\common\matrix_funcs.h">
+      <Filter>Header Files\Default</Filter>
+    </ClInclude>
+    <ClInclude Include="include\common\queue.h">
+      <Filter>Header Files\Default</Filter>
+    </ClInclude>
+    <ClInclude Include="include\common\thread.h">
+      <Filter>Header Files\Default</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="include\cudaconv2\conv_util.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\convnet.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\cost.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\cudaconv2\cudaconv2.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\data.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\layer.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\layer_kernels.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\neuron.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\nvmatrix\nvmatrix.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\nvmatrix\nvmatrix_kernels.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\nvmatrix\nvmatrix_operators.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\pyconvnet.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\util.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\weights.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\worker.cuh">
+      <Filter>Header Files\Default</Filter>
+    </None>
+    <None Include="include\extralayers.cuh">
+      <Filter>Header Files\Extra</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="src\cudaconv2\conv_util.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\convnet.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\cost.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\data.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\cudaconv2\filter_acts.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\cudaconv2\img_acts.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\layer.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\layer_kernels.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\neuron.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\nvmatrix\nvmatrix.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\nvmatrix\nvmatrix_kernels.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\pyconvnet.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\util.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\cudaconv2\weight_acts.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\weights.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\worker.cu">
+      <Filter>Source Files\Default</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\extralayers.cu">
+      <Filter>Source Files\Extra</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{5556ab50-92f5-4659-b87e-70add4470c50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{d9b6b274-fe60-4a4a-907f-38f65b653e1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Default">
+      <UniqueIdentifier>{80400da8-d8d7-44b8-bd17-274488925cc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Default">
+      <UniqueIdentifier>{7fb67a6d-27a7-4ea9-bae7-f8d1a4e3ec91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Extra">
+      <UniqueIdentifier>{ae2aebf6-f4fd-44e9-98ac-6254025cc901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Extra">
+      <UniqueIdentifier>{04806f41-e505-4b2c-ae01-1a0a65a9f9e3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\common\matrix.cpp">
+      <Filter>Source Files\Default</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
