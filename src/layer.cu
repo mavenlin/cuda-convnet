@@ -32,6 +32,7 @@
 #include <util.cuh>
 #include <cudaconv2.cuh>
 #include <matrix.h>
+#include "extralayers.cuh"
 
 using namespace std;
 
@@ -971,7 +972,10 @@ CostLayer& CostLayer::makeCostLayer(ConvNet* convNet, string& type, PyObject* pa
         return *new LogregCostLayer(convNet, paramsDict);
     } else if (type == "cost.sum2") {
         return *new SumOfSquaresCostLayer(convNet, paramsDict);
-    }
+    } else if (type == "cost.labelgroupsparse") {
+		return *new GroupSparsityInLabelCostLayer(convNet, paramsDict);
+	}
+
     throw string("Unknown cost layer type ") + type;
 }
 
@@ -1025,5 +1029,5 @@ void SumOfSquaresCostLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE 
 }
 
 void SumOfSquaresCostLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {
-    _prev[inpIdx]->getActsGrad().add(*_inputs[0], scaleTargets, -2 * _coeff);
+    _prev[inpIdx]->getActsGrad().add(*_inputs[0], scaleTargets, -_coeff);
 }

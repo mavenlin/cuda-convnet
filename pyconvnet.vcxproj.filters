@@ -60,7 +60,10 @@
     <None Include="include\worker.cuh">
       <Filter>Header Files\Default</Filter>
     </None>
-    <None Include="include\extralayers.cuh">
+    <None Include="include\extra\extralayers.cuh">
+      <Filter>Header Files\Extra</Filter>
+    </None>
+    <None Include="include\extra\extrautils.cuh">
       <Filter>Header Files\Extra</Filter>
     </None>
   </ItemGroup>
@@ -113,7 +116,10 @@
     <CudaCompile Include="src\worker.cu">
       <Filter>Source Files\Default</Filter>
     </CudaCompile>
-    <CudaCompile Include="src\extralayers.cu">
+    <CudaCompile Include="src\extra\extralayers.cu">
+      <Filter>Source Files\Extra</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\extra\extrautils.cu">
       <Filter>Source Files\Extra</Filter>
     </CudaCompile>
   </ItemGroup>

@@ -35,7 +35,8 @@
     <CudaCompile Include="src\cudaconv2\img_acts.cu" />
     <CudaCompile Include="src\cudaconv2\weight_acts.cu" />
     <CudaCompile Include="src\data.cu" />
-    <CudaCompile Include="src\extralayers.cu" />
+    <CudaCompile Include="src\extra\extralayers.cu" />
+    <CudaCompile Include="src\extra\extrautils.cu" />
     <CudaCompile Include="src\layer.cu" />
     <CudaCompile Include="src\layer_kernels.cu" />
     <CudaCompile Include="src\neuron.cu" />
@@ -52,7 +53,8 @@
     <None Include="include\cudaconv2\conv_util.cuh" />
     <None Include="include\cudaconv2\cudaconv2.cuh" />
     <None Include="include\data.cuh" />
-    <None Include="include\extralayers.cuh" />
+    <None Include="include\extra\extralayers.cuh" />
+    <None Include="include\extra\extrautils.cuh" />
     <None Include="include\layer.cuh" />
     <None Include="include\layer_kernels.cuh" />
     <None Include="include\neuron.cuh" />
@@ -134,14 +136,14 @@
     </LinkIncremental>
     <OutDir>./</OutDir>
     <IntDir>$(Platform)/$(Configuration)/</IntDir>
-    <IncludePath>$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)include;$(ProjectDir)include\common;$(ProjectDir)include\nvmatrix;$(ProjectDir)include\extra;$(ProjectDir)include\cudaconv2;$(ProjectDir)thirdparty;$(NVSDKCOMPUTE_ROOT)\CUDALibraries\common\inc;C:\Python27\include;C:\Python27\Lib\site-packages\numpy\core\include\numpy;$(CudaToolkitIncludeDir);$(IncludePath)</IncludePath>
     <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(CudaToolkitIncludeDir);./;../../common/inc;../../../shared/inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CudaToolkitIncludeDir);./;../../common/inc;../../../shared/inc;./include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -224,8 +226,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>C:/include/pthreads;C:\Program Files (x86)\Intel\Composer XE 2013\mkl\include;C:/Python27/Lib/site-packages/numpy/core/include/numpy;C:/Python27/include;./include/common;./include/nvmatrix;./include/cudaconv2;./include;$(CudaToolkitIncludeDir);./</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)thirdparty;$(ProjectDir)include\extra;$(ProjectDir)thirdparty\pthreads;C:\Program Files (x86)\Intel\Composer XE 2013\mkl\include;C:\Python27\Lib\site-packages\numpy\core\include\numpy;C:\Python27\include;$(ProjectDir)include\common;$(ProjectDir)include\nvmatrix;$(ProjectDir)include\cudaconv2;$(ProjectDir)include;$(CudaToolkitIncludeDir);.\</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);USE_MKL;NUMPY_INTERFACE</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -244,8 +246,8 @@
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>./;./include;./include/common;./include/nvmatrix;./include/cudaconv2;C:/Program Files (x86)/Intel/ComposerXE-2011/mkl/include;C:/Python27/include;C:/Python27/Lib/site-packages/numpy/core/include/numpy;C:/include/pthreads;C:/ProgramData/NVIDIA Corporation/NVIDIA GPU Computing SDK 4.2/CUDALibraries/common/inc</Include>
-      <Runtime>MD</Runtime>
+      <Include>$(ProjectDir);$(ProjectDir)include;$(ProjectDir)include\common;$(ProjectDir)include\nvmatrix;$(ProjectDir)include\extra;$(ProjectDir)include\cudaconv2;$(ProjectDir)thirdparty;$(MKLIncludeDir);C:\Python27\include;C:\Python27\Lib\site-packages\numpy\core\include\numpy;$(ProjectDir)thirdparty\pthreads;$(NVSDKCOMPUTE_ROOT)\CUDALibraries\common\inc</Include>
+      <Runtime>MT</Runtime>
       <Defines>_WINDLL;USE_MKL;NUMPY_INTERFACE</Defines>
       <CodeGeneration>compute_20,sm_20</CodeGeneration>
       <Optimization>O2</Optimization>
