@@ -39,7 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "thread.h"
+// #include "thread.h"
 
 #if defined(_WIN64) || defined(_WIN32)
 #include <float.h>

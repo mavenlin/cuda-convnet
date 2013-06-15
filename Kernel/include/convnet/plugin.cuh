@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2011, Alex Krizhevsky (akrizhevsky@gmail.com)
+ * Copyright (c) 2013, Lin Min (mavenlin@gmail.com)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -24,60 +24,20 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <map>
+//#include <function>
+#include <layer.cuh>
 #include <neuron.cuh>
-#include <util.cuh>
+#include "convnet.cuh"
 
 using namespace std;
 
-Neuron& Neuron::makeNeuron(PyObject* neuronDict) {
-    string type = pyDictGetString(neuronDict, "type");
-    PyObject* neuronParamsDict = PyDict_GetItemString(neuronDict, "params");
-    
-    if (type == "relu") {
-        return *new ReluNeuron();
-    }
-    
-    if (type == "softrelu") {
-        return *new SoftReluNeuron();
-    }
-    
-    if (type == "brelu") {
-        float a = pyDictGetFloat(neuronParamsDict, "a");
-        return *new BoundedReluNeuron(a);
-    }
+typedef Layer*  (*layerConFunc)(ConvNet*, PyObject*);
+typedef Neuron* (*neuronConFunc)();
 
-    if (type == "abs") {
-        return *new AbsNeuron();
-    }
+extern std::map<string, layerConFunc>  layers;
+extern std::map<string, neuronConFunc> neurons;
 
-    if (type == "logistic") {
-        return *new LogisticNeuron();
-    }
-    
-    if (type == "tanh") {
-        float a = pyDictGetFloat(neuronParamsDict, "a");
-        float b = pyDictGetFloat(neuronParamsDict, "b");
-        
-        return *new TanhNeuron(a, b);
-    }
-    
-    if (type == "square") {
-        return *new SquareNeuron();
-    }
-    
-    if (type == "sqrt") {
-        return *new SqrtNeuron();
-    }
-    
-    if (type == "linear") {
-        float a = pyDictGetFloat(neuronParamsDict, "a");
-        float b = pyDictGetFloat(neuronParamsDict, "b");
-        return *new LinearNeuron(a, b);
-    }
 
-    if (type == "ident") {
-        return *new Neuron();
-    }
-    
-    throw string("Unknown neuron type: ") + type;
-}
+
+void loadPlugins();

@@ -34,6 +34,8 @@
 #include <convnet.cuh>
 #include <util.cuh>
 
+#include "plugin.cuh"
+
 using namespace std;
 
 /* 
@@ -124,6 +126,8 @@ Layer* ConvNet::initLayer(string& layerType, PyObject* paramsDict) {
         CostLayer *c = &CostLayer::makeCostLayer(this, layerType, paramsDict);
         _layers.push_back(c);
         _costs.push_back(c);
+    } else if (layers.find(layerType) != layers.end()){
+        _layers.push_back(layers[layerType](this, paramsDict));
     } else {
         throw string("Unknown layer type ") + layerType;
     }

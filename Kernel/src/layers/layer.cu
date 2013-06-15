@@ -32,7 +32,7 @@
 #include <util.cuh>
 #include <cudaconv2.cuh>
 #include <matrix.h>
-#include "extralayers.cuh"
+#include "plugin.cuh"
 
 using namespace std;
 
@@ -972,9 +972,9 @@ CostLayer& CostLayer::makeCostLayer(ConvNet* convNet, string& type, PyObject* pa
         return *new LogregCostLayer(convNet, paramsDict);
     } else if (type == "cost.sum2") {
         return *new SumOfSquaresCostLayer(convNet, paramsDict);
-    } else if (type == "cost.labelgroupsparse") {
-		return *new GroupSparsityInLabelCostLayer(convNet, paramsDict);
-	}
+    } else if (layers.find(type) != layers.end()) {
+        return *(CostLayer*)layers[type](convNet, paramsDict);
+    }
 
     throw string("Unknown cost layer type ") + type;
 }

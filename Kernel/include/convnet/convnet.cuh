@@ -35,7 +35,11 @@
 #include <thread.h>
 #include <math.h>
 
+//#include <function>
+#include <map>
+
 #include "layer.cuh"
+#include "neuron.cuh"
 #include "data.cuh"
 #include "worker.cuh"
 #include "weights.cuh"
@@ -45,6 +49,7 @@ class WorkResult;
 class Layer;
 class DataLayer;
 class CostLayer;
+
 
 class ConvNet : public Thread {
 protected:

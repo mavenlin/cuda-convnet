@@ -41,6 +41,8 @@
 #include <pyconvnet.cuh>
 #include <convnet.cuh>
 
+#include "plugin.cuh"
+
 using namespace std;
 static ConvNet* model = NULL;
 
@@ -63,6 +65,7 @@ extern "C" __declspec(dllexport) void initpyconvnet() {
 void INITNAME() {
     (void) Py_InitModule(QUOTEME(MODELNAME), _ConvNetMethods);
     import_array();
+    loadPlugins();
 }
 #endif
 
