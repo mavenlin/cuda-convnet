@@ -1,4 +1,4 @@
-MODELNAME := kernel
+MODELNAME := libkernel
 
 INCLUDES :=  -I$(PYTHON_INCLUDE_PATH) -I$(NUMPY_INCLUDE_PATH) -I./include/data -I./include/layers -I./include/matrix -I./include/conv -I./include/nvmatrix -I./include/convnet -I$(INTEL_MKL_PATH)/include
 LIB := -lpthread -L$(CUDA_INSTALL_PATH)/lib64 -L$(INTEL_MKL_PATH)/lib/intel64 -lmkl_rt -ldl

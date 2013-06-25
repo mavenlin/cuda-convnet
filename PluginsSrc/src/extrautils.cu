@@ -3,8 +3,8 @@
 
 void sparse_histogram(float * input, int num, device_vector<float>& histogram_values, device_vector<int>& histogram_counts)
 {
-	typedef typename float ValueType; // input value type
-	typedef typename int IndexType;   // histogram index type
+	typedef float ValueType; // input value type
+	typedef int IndexType;   // histogram index type
 
 	// copy input data
 	thrust::device_ptr<float> d_ptr(input);

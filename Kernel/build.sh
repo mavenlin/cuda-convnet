@@ -36,5 +36,5 @@ export NUMPY_INCLUDE_PATH=/home/svu/a0089298/usr/local/lib/python2.7/site-packag
 
 export INTEL_MKL_PATH=/home/svu/a0089298/intel/mkl
 
-make $*
+make -j 4 $*
 

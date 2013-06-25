@@ -27,6 +27,9 @@
 #include "plugin.cuh"
 #include <dirent.h>
 #include <dlfcn.h>
+#include <iostream>
+
+using namespace std;
 
 std::map<string, layerConFunc>  layers;
 std::map<string, neuronConFunc> neurons;
@@ -46,10 +49,14 @@ void loadPlugins(){
 				cout<<"loading plugin "<<files->d_name<<endl;
 				string plugin = "Plugins/" + string(files->d_name);
 				void * handle = dlopen(plugin.c_str(), RTLD_NOW);
+				if(dlerror())
+					cout<<dlerror()<<endl;
 				// TODO
 				// Add error check code in dlsym
 				// get layer constructors from current plugin
 				layerConstructorP layerCon = (layerConstructorP)dlsym(handle, "layerConstructor");
+				if(dlerror())
+					cout<<dlerror()<<endl;
 				std::map<string, layerConFunc> layerConMap = layerCon();
 				layers.insert(layerConMap.begin(), layerConMap.end());
 				// get neuron constructors from current plugin
