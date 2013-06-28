@@ -26,6 +26,7 @@ import numpy as n
 from numpy.random import randn, rand, random_integers
 import os
 from util import *
+from multiprocessing import Array, Value
 
 BATCH_META_FILE = "batches.meta"
 
@@ -143,6 +144,32 @@ class DataProvider:
     def get_num_batches(srcdir):
         return len(DataProvider.get_batch_nums(srcdir))
     
+
+class JPEGDataProvider(DataProvider):
+    def __init__(self, data_dir, batch_range, init_epoch=1, init_batchnum=None, dp_params={}, test=False):
+        DataProvider.__init__(self, data_dir, batch_range, init_epoch, init_batchnum, dp_params, test)
+
+    def get_batch(self, batch_num):
+        f = open(self.get_data_file_name(batch_num), 'r')
+        memfile = StringIO(f.read())
+        f.close()
+        zipf = zipfile.ZipFile(memfile, 'r', ZIP_STORED)
+        # get the file list from meta
+        filelist = self.batch_meta['image_batches'][self.batch_meta['batch_idx'].index(batch_num)]
+        data = []
+        for i in filelist:
+            arr = n.array(Image.open(StringIO(zipf.read(i))))
+            data.append(n.concantenate([arr[:,:,0].flatten('C'), arr[:,:,1].flatten('C'), arr[:,:,2].flatten('C')]))
+
+        data = n.array(data)
+        data = n.require(data.T, n.float32, 'C')
+        labels = self.batch_meta['label_batches'][self.batch_meta['batch_idx'].index(batch_num)]
+
+        dic = { 'batch_label': 'training batch '+str(batch_num), 'labels': labels, 'data': data, 'filenames': filelist }
+
+        return dic
+
+
 class DummyDataProvider(DataProvider):
     def __init__(self, data_dim):
         #self.data_dim = data_dim

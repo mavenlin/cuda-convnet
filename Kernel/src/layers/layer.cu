@@ -286,10 +286,10 @@ WeightLayer::WeightLayer(ConvNet* convNet, PyObject* paramsDict, bool trans, boo
     for (int i = 0; i < weightSourceLayerIndices.size(); i++) {
         int srcLayerIdx = weightSourceLayerIndices[i];
         int matrixIdx = weightSourceMatrixIndices[i];
-        if (srcLayerIdx == convNet->getNumLayers()) { // Current layer
+        if (srcLayerIdx == convNet->getNumLayers()) { // Current layer // Shares weights with another weight matrix in the same layer.
             // This constructor does not create intrisic data, but shares the data from the other matrix.
             _weights.addWeights(*new Weights(_weights[matrixIdx], epsW[i])); 
-        } else if (srcLayerIdx >= 0) {
+        } else if (srcLayerIdx >= 0) { // shares weights from another layer.
             WeightLayer& srcLayer = *static_cast<WeightLayer*>(&convNet->getLayer(srcLayerIdx));
             Weights* srcWeights = &srcLayer.getWeights(matrixIdx);
             _weights.addWeights(*new Weights(*srcWeights, epsW[i]));

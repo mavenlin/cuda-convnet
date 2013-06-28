@@ -136,3 +136,80 @@ class DummyConvNetDataProvider(LabeledDummyDataProvider):
     # Returns the dimensionality of the two data matrices returned by get_next_batch
     def get_data_dims(self, idx=0):
         return self.batch_meta['num_vis'] if idx == 0 else 1
+
+
+
+
+# This one is the more general cropped data provider
+# thus there are several parameters put in the meta file, which is previously hard coded.
+# 1. the iamge+_size, which is 32 for CIFAR
+# 2. the num_colors, which is 3 for RGB image
+class CroppedJPEGDataProvider(JPEGDataProvider):
+    def __init__(self, data_dir, batch_range=None, init_epoch=1, init_batchnum=None, dp_params=None, test=False):
+        JPEGDataProvider.__init__(self, data_dir, batch_range, init_epoch, init_batchnum, dp_params, test)
+
+        self.image_size = self.batch_meta['image_size']
+        self.border_size = dp_params['crop_border']
+        self.inner_size = self.batch_meta['image_size'] - self.border_size*2
+        self.multiview = dp_params['multiview_test'] and test
+        self.num_views = 5*2
+        self.data_mult = self.num_views if self.multiview else 1
+        self.num_colors = self.batch_meta['num_colors']
+        self.batch_size = self.batch_meta['batch_size']
+        
+        # for d in self.data_dic:
+            # d['data'] = n.require(d['data'], requirements='C')
+            # d['labels'] = n.require(n.tile(d['labels'].reshape((1, d['data'].shape[1])), (1, self.data_mult)), requirements='C')
+        
+        # create a place for storing the data.
+        # since the data is being used for training when at the same time the next batch is being loaded.
+        # that's why we need an extra space for the next batch, else the data will be flushed.
+        self.cropped_data = [n.zeros((self.get_data_dims(), self.batch_size*self.data_mult), dtype=n.single) for x in xrange(2)]
+
+        self.batches_generated = 0
+        self.data_mean = self.batch_meta['data_mean'].reshape((self.num_colors,self.image_size,self.image_size))[:,self.border_size:self.border_size+self.inner_size,self.border_size:self.border_size+self.inner_size].reshape((self.get_data_dims(), 1))
+
+    def get_next_batch(self):
+        epoch, batchnum, datadic = JPEGDataProvider.get_next_batch(self)
+
+        cropped = self.cropped_data[self.batches_generated % 2]
+
+        self.__trim_borders(datadic['data'], cropped)
+        cropped -= self.data_mean
+        self.batches_generated += 1
+        return epoch, batchnum, [cropped, datadic['labels']]
+        
+    def get_data_dims(self, idx=0):
+        return self.inner_size**2 * self.num_colors if idx == 0 else 1
+
+    # Takes as input an array returned by get_next_batch
+    # Returns a (numCases, imgSize, imgSize, 3) array which can be
+    # fed to pylab for plotting.
+    # This is used by shownet.py to plot test case predictions.
+    def get_plottable_data(self, data):
+        return n.require((data + self.data_mean).T.reshape(data.shape[1], 3, self.inner_size, self.inner_size).swapaxes(1,3).swapaxes(1,2) / 255.0, dtype=n.single)
+    
+    def __trim_borders(self, x, target):
+        y = x.reshape(self.num_colors, self.image_size, self.image_size, x.shape[1])
+
+        if self.test: # don't need to loop over cases
+            if self.multiview:
+                start_positions = [(0,0),  (0, self.border_size*2),
+                                   (self.border_size, self.border_size),
+                                  (self.border_size*2, 0), (self.border_size*2, self.border_size*2)]
+                end_positions = [(sy+self.inner_size, sx+self.inner_size) for (sy,sx) in start_positions]
+                for i in xrange(self.num_views/2):
+                    pic = y[:,start_positions[i][0]:end_positions[i][0],start_positions[i][1]:end_positions[i][1],:]
+                    target[:,i * x.shape[1]:(i+1)* x.shape[1]] = pic.reshape((self.get_data_dims(),x.shape[1]))
+                    target[:,(self.num_views/2 + i) * x.shape[1]:(self.num_views/2 +i+1)* x.shape[1]] = pic[:,:,::-1,:].reshape((self.get_data_dims(),x.shape[1]))
+            else:
+                pic = y[:,self.border_size:self.border_size+self.inner_size,self.border_size:self.border_size+self.inner_size, :] # just take the center for now
+                target[:,:] = pic.reshape((self.get_data_dims(), x.shape[1]))
+        else:
+            for c in xrange(x.shape[1]): # loop over cases
+                startY, startX = nr.randint(0,self.border_size*2 + 1), nr.randint(0,self.border_size*2 + 1)
+                endY, endX = startY + self.inner_size, startX + self.inner_size
+                pic = y[:,startY:endY,startX:endX, c]
+                if nr.randint(2) == 0: # also flip the image with 50% probability
+                    pic = pic[:,:,::-1]
+                target[:,c] = pic.reshape((self.get_data_dims(),))

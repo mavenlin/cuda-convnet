@@ -192,6 +192,8 @@ class ConvNet(IGPUModel):
         DataProvider.register_data_provider('cifar', 'CIFAR', CIFARDataProvider)
         DataProvider.register_data_provider('dummy-cn-n', 'Dummy ConvNet', DummyConvNetDataProvider)
         DataProvider.register_data_provider('cifar-cropped', 'Cropped CIFAR', CroppedCIFARDataProvider)
+        DataProvider.register_data_provider('cropped-jpeg', 'Cropped JPEG', CroppedJPEGDataProvider)
+        DataProvider.register_data_provider('jpeg', 'Cropped JPEG', JPEGDataProvider)
         
         return op
     

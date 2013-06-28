@@ -91,7 +91,7 @@ class IGPUModel:
     def import_model(self):
         print "========================="
         print "Importing %s C++ module" % ('_' + self.model_name)
-        self.libmodel = __import__('_' + self.model_name) 
+        self.libmodel = __import__('_' + self.model_name)
                    
     def fill_excused_options(self):
         pass
@@ -248,6 +248,7 @@ class IGPUModel:
     def has_var(self, var_name):
         return var_name in self.model_state
         
+    # this function saves the model to file.
     def save_state(self):
         for att in self.model_state:
             if hasattr(self, att):
