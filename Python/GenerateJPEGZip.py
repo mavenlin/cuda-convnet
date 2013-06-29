@@ -1,27 +1,29 @@
 import numpy as n
 import os
+import os.path
 from PIL import Image
 import sys
-from zipfile import ZipFile
+from zipfile import ZipFile, ZIP_STORED
 import zipfile
 import cPickle as pickle
-
+from StringIO import StringIO
+from time import time
 
 # process the folder datadir
 # with subfolder names inside the id2label keys
 # process only labelnum of labels
-def process(id2label, datadir, labelnum, batchsize = 128):
+def process(id2label, datadir, labelnum, batchsize, stordir, base=0):
     
     # 1. read all the images and corresponding labels under this folder
     images = []
     labels = []
     for dirs in sorted(id2label.keys()):
         label = sorted(id2label.keys()).index(dirs)
-        for img in os.listdir(datadir+'/'+dirs):
-            labels.append(label)
-            images.append(datadir+'/'+dirs+'/'+img)
         if label >= labelnum:
             break
+        for img in os.listdir(os.path.join(datadir, dirs)):
+            labels.append(label)
+            images.append(os.path.join(datadir, dirs, img))
 
     # 2. randperm the images and labels
     rarray = n.random.permutation(range(len(labels)))
@@ -56,7 +58,7 @@ def process(id2label, datadir, labelnum, batchsize = 128):
 
     # zip images
     for i in dic['batch_idx']:
-        zipfilename = datadir+'/'+'data_batch_'+str(i+1)
+        zipfilename = os.path.join(stordir, 'data_batch_'+str(base+i+1))
         myzip = ZipFile(zipfilename, 'w', zipfile.ZIP_STORED)
         newstaff = []
         for img in dic['image_batches'][i]:
@@ -67,28 +69,29 @@ def process(id2label, datadir, labelnum, batchsize = 128):
 
     return dic
 
-def calcMean(datadir):
+def calcMean(datadir, r):
     sumlist = []
     meta = {}
     totalnum = 0
     subdirs = os.listdir(datadir)
-    for files in subdirs:
-        if files.startswith('data_batch_'):
-            f = open(datadir+'/'+files, 'r')
-            memfile = StringIO(f.read())
-            f.close()
-            zipf = zipfile.ZipFile(memfile, 'r', ZIP_STORED)
-            # get the file list from meta
-            filelist = zipf.namelist()
-            totalnum += len(filelist)
-            data = []
-            for i in filelist:
-                arr = n.array(Image.open(StringIO(zipf.read(i))))
-                data.append(n.concantenate([arr[:,:,0].flatten('C'), arr[:,:,1].flatten('C'), arr[:,:,2].flatten('C')]))
+    for idx in r:
+        # t0 = time()
+        f = open(os.path.join(datadir, 'data_batch_'+str(idx)), 'r')
+        memfile = StringIO(f.read())
+        f.close()
+        zipf = zipfile.ZipFile(memfile, 'r', ZIP_STORED)
+        # get the file list from meta
+        filelist = zipf.namelist()
+        totalnum += len(filelist)
+        data = n.zeros((len(filelist), 3*256*256), dtype=n.float32)
+        for i in range(len(filelist)):
+            arr = n.array(Image.open(StringIO(zipf.read(filelist[i]))))
+            data[i, :] = n.concatenate([arr[:,:,0].flatten('C'), arr[:,:,1].flatten('C'), arr[:,:,2].flatten('C')])
 
-            data = n.array(data)
-            s = n.sum(data, axis=0)
-            sumlist.append(s)
+	# print time()-t0
+        # data = n.array(data)
+        s = n.sum(data, axis=0)
+        sumlist.append(s)
 
     # assert(len(sumlist)==(len(subdirs)-1))
     # assert(totalnum==1281167) # the number of imagenet training images
@@ -97,6 +100,7 @@ def calcMean(datadir):
     allsum = n.sum(sumlist, axis=0)
     mean = n.divide(allsum, totalnum)
     mean = n.require(mean.T, n.float32, 'C')
+    mean = mean.reshape(mean.size, 1)
     return mean
 
 
@@ -104,13 +108,16 @@ if __name__ == "__main__":
 
     # First get the ID2Label mapping.
     # map each of the foldeer to a number
-    ID2Label = open(sys.argv[1]+'/'+'ID2Label')
+    datadir = sys.argv[1]
+    stordir = sys.argv[2]
+
+    ID2Label = open(os.path.join(datadir, 'ID2Label'))
     id2label = {}
     for line in ID2Label:
         id2label[line[:9]]=line[11:]
 
     # process imagenet
-    labelnum = int(sys.argv[2])
+    labelnum = int(sys.argv[3])
 
     # Get the label names
     labelnames = []
@@ -118,12 +125,11 @@ if __name__ == "__main__":
         labelnames.append(id2label[item])
 
     # process train and test
-    train = process(id2label, sys.argv[1]+'/'+'train', labelnum)
-    test  = process(id2label, sys.argv[1]+'/'+'test',  labelnum)
-
+    train = process(id2label, os.path.join(datadir, 'train'), labelnum, 128, stordir, 0)
+    trainidxnum = len(train['batch_idx'])
+    test  = process(id2label, os.path.join(datadir, 'test'),  labelnum, 128, stordir, trainidxnum)
 
     # merge meta
-    trainidxnum = len(train['batch_idx'])
     for i in range(len(test['batch_idx'])):
         test['batch_idx'][i] += trainidxnum
 
@@ -135,12 +141,12 @@ if __name__ == "__main__":
     print 'training batches: 1-'+str(trainidxnum)
 
     # calcmean
-    mean = calcMean(sys.argv[1]+'/'+'train')
+    mean = calcMean(stordir, range(1, trainidxnum+1))
     dic['data_mean'] = mean
     dic['num_cases_per_batch'] = 128
     dic['label_names'] = labelnames
     
     # dump meta
-    pickle.dump(dic,open("batches.meta",'w'))
+    pickle.dump(dic,open(os.path.join(stordir, 'batches.meta'),'w'))
 
     

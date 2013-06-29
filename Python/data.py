@@ -26,7 +26,10 @@ import numpy as n
 from numpy.random import randn, rand, random_integers
 import os
 from util import *
-from multiprocessing import Array, Value
+from StringIO import StringIO
+from zipfile import ZIP_STORED
+import zipfile
+import Image
 
 BATCH_META_FILE = "batches.meta"
 
@@ -151,17 +154,17 @@ class JPEGDataProvider(DataProvider):
 
     def get_batch(self, batch_num):
         f = open(self.get_data_file_name(batch_num), 'r')
-        memfile = StringIO(f.read())
+        content = f.read()
+        memfile = StringIO(content)
         f.close()
         zipf = zipfile.ZipFile(memfile, 'r', ZIP_STORED)
         # get the file list from meta
         filelist = self.batch_meta['image_batches'][self.batch_meta['batch_idx'].index(batch_num)]
-        data = []
-        for i in filelist:
-            arr = n.array(Image.open(StringIO(zipf.read(i))))
-            data.append(n.concantenate([arr[:,:,0].flatten('C'), arr[:,:,1].flatten('C'), arr[:,:,2].flatten('C')]))
+        data = n.zeros((len(filelist), 3*self.batch_meta['image_size']**2), dtype=n.float32)
+        for i in range(len(filelist)):
+            arr = n.array(Image.open(StringIO(zipf.read(filelist[i]))))
+            data[i,:] = n.concatenate([arr[:,:,0].flatten('C'), arr[:,:,1].flatten('C'), arr[:,:,2].flatten('C')])
 
-        data = n.array(data)
         data = n.require(data.T, n.float32, 'C')
         labels = self.batch_meta['label_batches'][self.batch_meta['batch_idx'].index(batch_num)]
 
