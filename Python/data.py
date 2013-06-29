@@ -165,12 +165,15 @@ class JPEGDataProvider(DataProvider):
             arr = n.array(Image.open(StringIO(zipf.read(filelist[i]))))
             data[i,:] = n.concatenate([arr[:,:,0].flatten('C'), arr[:,:,1].flatten('C'), arr[:,:,2].flatten('C')])
 
-        data = n.require(data.T, n.float32, 'C')
+        data = n.require(data.T, n.uint8, 'C')
         labels = self.batch_meta['label_batches'][self.batch_meta['batch_idx'].index(batch_num)]
 
         dic = { 'batch_label': 'training batch '+str(batch_num), 'labels': labels, 'data': data, 'filenames': filelist }
 
         return dic
+
+    def get_num_classes(self):
+        return len(self.batch_meta['label_names'])
 
 
 class DummyDataProvider(DataProvider):

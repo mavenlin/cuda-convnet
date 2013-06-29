@@ -196,6 +196,9 @@ void computeEltwiseMaxGrad(NVMatrix& actGrad, NVMatrix& input, NVMatrix& output,
  * target:          (1, numCases)
  */
 void computeLogregCost(NVMatrix& labels, NVMatrix& probs, NVMatrix& labelLogProbs_out, NVMatrix& correctProbs_out) {
+    
+    // labels is the real label starting from 0
+    // probs are the probability of each sample belonging to each label, which is the output of the network
     int numCases = probs.getNumCols(); 
     int numOut = probs.getNumRows(); 
 
@@ -205,6 +208,7 @@ void computeLogregCost(NVMatrix& labels, NVMatrix& probs, NVMatrix& labelLogProb
     assert(labels.isContiguous());
     assert(probs.isContiguous());
     
+    // Find the max along the first axis. which is finding the max probable label for each of the samples
     NVMatrix& maxProbs = probs.max(0);
     
     labelLogProbs_out.resize(1, numCases);

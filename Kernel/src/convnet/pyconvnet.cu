@@ -158,7 +158,9 @@ PyObject* finishBatch(PyObject *self, PyObject *args) {
     
     Cost& cost = res->getResults();
     PyObject* dict = PyDict_New();
-    CostMap& costMap = cost.getCostMap();
+    // cost map is a string to list map, the string is the name of the cost layer, and the list is several costs values defined in that layer.
+    CostMap& costMap = cost.getCostMap(); 
+
     for (CostMap::const_iterator it = costMap.begin(); it != costMap.end(); ++it) {
         PyObject* v = PyList_New(0);
         for (vector<double>::const_iterator iv = it->second->begin(); iv != it->second->end(); ++iv) {
