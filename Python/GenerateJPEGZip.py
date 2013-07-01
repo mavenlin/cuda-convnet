@@ -8,17 +8,17 @@ import zipfile
 import cPickle as pickle
 from StringIO import StringIO
 from time import time
+import itertools
 
 # process the folder datadir
 # with subfolder names inside the id2label keys
 # process only labelnum of labels
-def process(id2label, datadir, labelnum, batchsize, stordir, base=0):
-    
+def process(perm, id2label, datadir, labelnum, batchsize, stordir, base=0):
+
     # 1. read all the images and corresponding labels under this folder
     images = []
     labels = []
-    for dirs in n.random.permutation(id2label.keys()):
-        label = sorted(id2label.keys()).index(dirs)
+    for label, dirs in zip(range(perm), perm):
         if label >= labelnum:
             break
         for img in os.listdir(os.path.join(datadir, dirs)):
@@ -26,7 +26,7 @@ def process(id2label, datadir, labelnum, batchsize, stordir, base=0):
             images.append(os.path.join(datadir, dirs, img))
 
     # 2. randperm the images and labels
-    rarray = n.random.permutation(range(len(labels)))
+    rarray = itertools.permutations(range(len(labels)))
     num = len(labels)/batchsize
     totalnum = num
     if len(labels) % batchsize is not 0:
@@ -106,11 +106,13 @@ def calcMean(datadir, r):
 
 if __name__ == "__main__":
 
+    # Let's randomly permute the labels here
     # First get the ID2Label mapping.
     # map each of the foldeer to a number
     datadir = sys.argv[1]
     stordir = sys.argv[2]
 
+    # Read in all the Id 2 label Information
     ID2Label = open(os.path.join(datadir, 'ID2Label'))
     id2label = {}
     for line in ID2Label:
@@ -119,15 +121,19 @@ if __name__ == "__main__":
     # process imagenet
     labelnum = int(sys.argv[3])
 
-    # Get the label names
+    # permute the id 2 label
+    perm = itertools.permutations(id2labels.keys())
+
+    # Get the label names in the permutation order
     labelnames = []
-    for item in sorted(id2label.keys()):
+    for item in perm:
         labelnames.append(id2label[item])
+    labelnames = labelnames[:labelnum]
 
     # process train and test
-    train = process(id2label, os.path.join(datadir, 'train'), labelnum, 128, stordir, 0)
+    train = process(perm, id2label, os.path.join(datadir, 'train'), labelnum, 128, stordir, 0)
     trainidxnum = len(train['batch_idx'])
-    test  = process(id2label, os.path.join(datadir, 'test'),  labelnum, 128, stordir, trainidxnum)
+    test  = process(perm, id2label, os.path.join(datadir, 'test'),  labelnum, 128, stordir, trainidxnum)
 
     # merge meta
     for i in range(len(test['batch_idx'])):
