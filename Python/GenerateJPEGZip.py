@@ -17,7 +17,7 @@ def process(id2label, datadir, labelnum, batchsize, stordir, base=0):
     # 1. read all the images and corresponding labels under this folder
     images = []
     labels = []
-    for dirs in sorted(id2label.keys()):
+    for dirs in n.random.permutation(id2label.keys()):
         label = sorted(id2label.keys()).index(dirs)
         if label >= labelnum:
             break
