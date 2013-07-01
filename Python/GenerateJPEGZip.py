@@ -10,6 +10,7 @@ from StringIO import StringIO
 from time import time
 import itertools
 
+
 # process the folder datadir
 # with subfolder names inside the id2label keys
 # process only labelnum of labels
@@ -26,7 +27,7 @@ def process(perm, id2label, datadir, labelnum, batchsize, stordir, base=0):
             images.append(os.path.join(datadir, dirs, img))
 
     # 2. randperm the images and labels
-    rarray = itertools.permutations(range(len(labels)))
+    rarray = n.random.permutation(range(len(labels)))
     num = len(labels)/batchsize
     totalnum = num
     if len(labels) % batchsize is not 0:
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     labelnum = int(sys.argv[3])
 
     # permute the id 2 label
-    perm = itertools.permutations(id2labels.keys())
+    perm = n.random.permutation(id2labels.keys())
 
     # Get the label names in the permutation order
     labelnames = []
