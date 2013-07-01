@@ -19,7 +19,7 @@ def process(perm, id2label, datadir, labelnum, batchsize, stordir, base=0):
     # 1. read all the images and corresponding labels under this folder
     images = []
     labels = []
-    for label, dirs in zip(range(perm), perm):
+    for label, dirs in zip(range(len(perm)), perm):
         if label >= labelnum:
             break
         for img in os.listdir(os.path.join(datadir, dirs)):
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     labelnum = int(sys.argv[3])
 
     # permute the id 2 label
-    perm = n.random.permutation(id2labels.keys())
+    perm = n.random.permutation(id2label.keys())
 
     # Get the label names in the permutation order
     labelnames = []
