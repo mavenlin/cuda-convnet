@@ -1186,3 +1186,8 @@ neuron_parsers = sorted([NeuronParser('ident', 'f(x) = x', uses_acts=False, uses
                          ParamNeuronParser('brelu[a]', 'f(x) = min(a, max(0, x))', uses_acts=True, uses_inputs=False),
                          ParamNeuronParser('linear[a,b]', 'f(x) = a * x + b', uses_acts=True, uses_inputs=False)],
                         key=lambda x:x.type)
+
+
+import plugin
+layer_parsers.update(plugin.extra_layer_parsers)
+neuron_parsers = sorted(neuron_parsers+plugin.extra_neuron_parsers, key=lambda x:x.type)

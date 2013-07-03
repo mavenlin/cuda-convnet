@@ -33,7 +33,7 @@
 using namespace std;
 
 typedef Layer*  (*layerConFunc)(ConvNet*, PyObject*);
-typedef Neuron* (*neuronConFunc)();
+typedef Neuron* (*neuronConFunc)(PyObject*);
 
 extern std::map<string, layerConFunc>  layers;
 extern std::map<string, neuronConFunc> neurons;
