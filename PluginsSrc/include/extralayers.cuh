@@ -45,7 +45,7 @@ protected:
     	_dropout->randomizeUniform();
 
     	// set the elements at the position where _dropout[position] < _dropoutprob
-        _inputs->applyBinary(DropoutOperater(_dropoutprob), *_dropout, *_outputs);
+        _inputs->applyBinary(DropoutOperator(_dropoutprob), *_dropout, *_outputs);
     }
 
     void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
@@ -59,11 +59,11 @@ protected:
     }
 
 public:
-	class DropoutOperater {
+	class DropoutOperator {
 	private:
 		float _prob;
 	public:
-		DropoutOperater(prob) : _prob(prob) {
+		DropoutOperator(float prob) : _prob(prob) {
 			assert(prob>0);
 			assert(prob<1);
 		}
