@@ -20,11 +20,11 @@ void GroupSparsityInLabelCostLayer::fpropActs(int inpIdx, float scaleTargets, PA
 		counts.clear();
 		sparse_histogram(labels.getDevData(), numCases, values, counts);
 		
-		sqrts.resize((*_channels)[0], values.size());   // Allocate the matrix for summation calculation. The number of rows is equal to the number of channels. 
+		sqrts.resize(_channels, values.size());   // Allocate the matrix for summation calculation. The number of rows is equal to the number of channels. 
 														// The number of cols is equal to the number of distinct labels.
 		
 		// calculate the cost
-		float cost = CalculateSqrtSumSquareMatrix(labels, acts, values, counts, sqrts, (*_channels)[0], acts.getNumRows()/(*_channels)[0]);
+		float cost = CalculateSqrtSumSquareMatrix(labels, acts, values, counts, sqrts, _channels, acts.getNumRows()/_channels);
 		_costv.clear();
 		_costv.push_back(cost);
     }
@@ -32,7 +32,7 @@ void GroupSparsityInLabelCostLayer::fpropActs(int inpIdx, float scaleTargets, PA
 
 void GroupSparsityInLabelCostLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType){ // For cost layer, the v matrix is not necessary.
 	NVMatrix target(*_inputs[1]);
-	CalculateGradient(*_inputs[1], *_inputs[0], sqrts, values, counts, (*_channels)[0], (*_inputs[1]).getNumRows()/(*_channels)[0], (*_inputs[1]).getNumCols(), target);
+	CalculateGradient(*_inputs[1], *_inputs[0], sqrts, values, counts, _channels, (*_inputs[1]).getNumRows()/_channels, (*_inputs[1]).getNumCols(), target);
 	_prev[inpIdx]->getActsGrad().add(target, scaleTargets, -_coeff);
 }
 
@@ -40,8 +40,8 @@ void GroupSparsityInLabelCostLayer::bpropActs(NVMatrix& v, int inpIdx, float sca
 GroupSparsityInLabelCostLayer::GroupSparsityInLabelCostLayer(ConvNet* convNet, PyObject* paramsDict) : CostLayer(convNet, paramsDict, false){
 
 	// Initialize variables from python
-	_channels = pyDictGetIntV(paramsDict, "channels");
-    _imgSize = pyDictGetIntV(paramsDict, "imgSize");
+	_channels = pyDictGetInt(paramsDict, "channels");
+    _imgSize = pyDictGetInt(paramsDict, "imgSize");
 }
 
 
@@ -80,7 +80,7 @@ extern "C" __attribute__((visibility("default")))
 std::map<string, layerConFunc> layerConstructor(){
 	std::cout<<"Getting the layer constructors inside this shared library"<<std::endl;
 	std::map<string, layerConFunc> ret;
-	ret["LabelGroupSparsityCostLayer"] = &CreateGroupSparsityInLabelCostLayer;
+	ret["cost.gsinlabel"] = &CreateGroupSparsityInLabelCostLayer;
 	return ret;
 }
 
@@ -88,6 +88,6 @@ extern "C" __attribute__((visibility("default")))
 std::map<string, neuronConFunc> neuronConstructor(){
 	std::cout<<"Getting the neuron constructors inside this shared library"<<std::endl;
 	std::map<string, neuronConFunc> ret;
-	ret["dropoutNeuron"] = &CreateDropoutNeuron;
+	ret["dropout"] = &CreateDropoutNeuron;
 	return ret;
 }

@@ -11,7 +11,7 @@
 
 class GroupSparsityInLabelCostLayer : public CostLayer {
 protected:
-	intv *_channels, *_imgSize;
+	int _channels, _imgSize;
 	NVMatrix sqrts;
 	thrust::device_vector<int> counts;
 	thrust::device_vector<float> values;
@@ -63,11 +63,12 @@ public:
 	private:
 		float _prob;
 	public:
-		DropoutOperator(const float prob) : _prob(prob) {
+		DropoutOperator(float prob) : _prob(prob) {
 			assert(prob>0);
 			assert(prob<1);
 		}
-		__device__ inline float operator()(const float source, const float uniform) {
+		
+        __device__ inline float operator()(float source, float uniform) const {
 			if( uniform < _prob )
 				return 0;
 			else
