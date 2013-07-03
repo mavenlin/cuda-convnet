@@ -117,7 +117,7 @@ if __name__ == "__main__":
     ID2Label = open(os.path.join(datadir, 'ID2Label'))
     id2label = {}
     for line in ID2Label:
-        id2label[line[:9]]=line[11:]
+        id2label[line[:9]]=line[11:].replace('\r\n','')
 
     # process imagenet
     labelnum = int(sys.argv[3])
@@ -142,6 +142,10 @@ if __name__ == "__main__":
 
     dic = {'data_name': 'image-net', 'num_colors': 3, 'batch_size': 128, 'num_vis': 256*256, 'image_size': 256}
     dic['batch_idx'] = train['batch_idx'] + test['batch_idx']
+
+    for i in range(len(dic['batch_idx'])):
+        dic['batch_idx'] += 1
+
     dic['label_batches'] = train['label_batches'] + test['label_batches']
     dic['image_batches'] = train['image_batches'] + test['image_batches']
     

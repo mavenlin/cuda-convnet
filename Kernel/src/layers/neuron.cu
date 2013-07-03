@@ -81,7 +81,7 @@ Neuron& Neuron::makeNeuron(PyObject* neuronDict) {
     }
 
     if (neurons.find(type) != neurons.end()) {
-        return *neurons[type]();
+        return *neurons[type](neuronParamsDict);
     }
     
     throw string("Unknown neuron type: ") + type;

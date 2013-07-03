@@ -45,12 +45,33 @@ GroupSparsityInLabelCostLayer::GroupSparsityInLabelCostLayer(ConvNet* convNet, P
 }
 
 
-// Define a function that creates a new Labelgroupsparsity layer and return the pointer
-Layer* CreateGroupSparsityInLabelCostLayer(ConvNet* convNet, PyObject* paramsDict){
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Define functions that will create the Layers and Neurons defined inside this shared library
+Layer* CreateGroupSparsityInLabelCostLayer(ConvNet* convNet, PyObject* paramsDict) {
 	return new GroupSparsityInLabelCostLayer(convNet, paramsDict);
 }
 
-
+Neuron* CreateDropoutNeuron(PyObject* neuronParamsDict) {
+	return new DropoutNeuron(neuronParamsDict);
+}
 
 // The following two functions are exported from the shared object.
 // All constructors of the layers or neurons defined in this shared library should be returned from this function.
@@ -65,5 +86,8 @@ std::map<string, layerConFunc> layerConstructor(){
 
 extern "C" __attribute__((visibility("default")))
 std::map<string, neuronConFunc> neuronConstructor(){
-	return std::map<string, neuronConFunc>();
+	std::cout<<"Getting the neuron constructors inside this shared library"<<std::endl;
+	std::map<string, neuronConFunc> ret;
+	ret["dropoutNeuron"] = &CreateDropoutNeuron;
+	return ret;
 }
