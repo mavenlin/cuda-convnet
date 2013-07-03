@@ -6,8 +6,9 @@ cd PluginsSrc
 ./build.sh
 cd ..
 
-cp Kernel/bin/linux/release/libkernel.so ./
-rm -rf Plugins
-mkdir Plugins
-cp PluginsSrc/bin/linux/release/* ./Plugins/
-
+mkdir dist
+cp Kernel/bin/linux/release/libkernel.so ./dist/
+rm -rf dist/Plugins
+mkdir dist/Plugins
+cp PluginsSrc/bin/linux/release/* ./dist/Plugins/
+cp Python/*.py ./dist/

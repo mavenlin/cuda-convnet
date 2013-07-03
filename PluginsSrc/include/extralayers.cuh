@@ -63,11 +63,11 @@ public:
 	private:
 		float _prob;
 	public:
-		DropoutOperator(float prob) : _prob(prob) {
+		DropoutOperator(const float prob) : _prob(prob) {
 			assert(prob>0);
 			assert(prob<1);
 		}
-		__device__ inline float operator()(float source, float uniform) {
+		__device__ inline float operator()(const float source, const float uniform) {
 			if( uniform < _prob )
 				return 0;
 			else
