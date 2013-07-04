@@ -67,8 +67,6 @@ __global__ void CalculateSqrtSumSquare(float * labels, float * acts, float * val
 	target[targetIdx] = sqrt(target[targetIdx]);
 }
 
-
-
 float CalculateSqrtSumSquareMatrix(NVMatrix& labels, NVMatrix& acts, thrust::device_vector<float>& values, thrust::device_vector<int>& counts, NVMatrix& target, int channels, int imagePixels)
 {
 	assert(acts.getNumRows() == channels*imagePixels);
@@ -94,11 +92,11 @@ __global__ void kCalculateGradient(float * acts, float * labels, float * sqrts, 
 	if(channelIdx >= channels)
 		return;
 	int pixelStartIdx = channelIdx * imagePixels;
-	for(int i = 0; i < numCases; i++){
+	for(int i = 0; i < numCases; i++) {
 		if(labels[i] == label)
 			for(int j = 0; j < imagePixels; j++){
 				int targetIdx = (pixelStartIdx+j)*numCases + i;
-				target[targetIdx] = acts[targetIdx]/sqrts[channelIdx*numLabels+labelIdx]; // TODO: handle the case when the denominator is very small.
+				target[targetIdx] = acts[targetIdx]/(sqrts[channelIdx*numLabels+labelIdx]+2e-7); // TODO: handle the case when the denominator is very small.
 			}
 	}
 }

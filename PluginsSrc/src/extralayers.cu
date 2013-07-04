@@ -21,8 +21,8 @@ void GroupSparsityInLabelCostLayer::fpropActs(int inpIdx, float scaleTargets, PA
 		sparse_histogram(labels.getDevData(), numCases, values, counts);
 		
 		sqrts.resize(_channels, values.size());   // Allocate the matrix for summation calculation. The number of rows is equal to the number of channels. 
-														// The number of cols is equal to the number of distinct labels.
-		
+                                                  // The number of cols is equal to the number of distinct labels.
+		sqrts.apply(NVMatrixOps::Zero());
 		// calculate the cost
 		float cost = CalculateSqrtSumSquareMatrix(labels, acts, values, counts, sqrts, _channels, acts.getNumRows()/_channels);
 		_costv.clear();
