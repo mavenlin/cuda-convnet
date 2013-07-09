@@ -953,7 +953,8 @@ class LocalLayerParser(WeightLayerParser):
                     self.verify_divisible(dic['channels'][i], 4*dic['groups'][i], 'channels', '4 * groups', input_idx=i)
                 self.verify_divisible(dic['channels'][i], dic['groups'][i], 'channels', 'groups', input_idx=i)
 
-            self.verify_divisible(dic['filters'], 16*dic['groups'][i], 'filters * groups', input_idx=i)
+            # self.verify_divisible(dic['filters'], 16*dic['groups'][i], 'filters * groups', input_idx=i)
+            self.verify_divisible(dic['filters'], dic['groups'][i], 'filters * groups', input_idx=i)
         
             dic['padding'][i] = -dic['padding'][i]
         dic['overSample'] = [groups*filterChannels/channels for groups,filterChannels,channels in zip(dic['groups'], dic['filterChannels'], dic['channels'])]

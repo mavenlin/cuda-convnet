@@ -54,7 +54,7 @@
  // Each BlockIdxX will calculate 16 threadsX * imgsPerThread.
  // The BlockIdxY will determine the subregion of the images. The image is divided up into 4x4 subregions.
  // The x and y idx of the subregion is calculated from the blockidxY
-template <int imgsPerThread, int numColors, bool scale, bool checkCaseBounds, bool conv>
+template <int imgsPerThread, int numColors, bool scale, bool checkCaseBounds, bool conv, bool checkFilterBounds>
 __global__ void img_acts_color(const float* hidActs, const float* filters, float* targets,
                                    const int numModulesY, const int numModulesX, const int numImages, const int numFilters,
                                    const int filterSize, const int imgSizeY, const int imgSizeX,
@@ -76,18 +76,18 @@ __global__ void img_acts_color(const float* hidActs, const float* filters, float
     const int pxYInRegion = threadIdx.y / 4, pxXInRegion = threadIdx.y % 4;
     const int pxY = blockRegionTop + pxYInRegion;
     const int pxX = blockRegionLeft + pxXInRegion;
-    const int pxIdx = pxY * imgSizeX + pxX;
+    const int pxIdx = pxY * imgSizeX + pxX; // The index of the target image pixel that should be calculated in this thread.
 
-    // In case it goes out of bound inside the target image. (Full convolution)
+
     const bool isPxInImg = pxY < imgSizeY && pxX < imgSizeX;
 
     const int numModules = numModulesY * numModulesX;
     const int filterPixels = filterSize * filterSize;
     const int imgPixels = imgSizeX * imgSizeY;
-    const int tidx = threadIdx.y * 16 + threadIdx.x; // thread index, do not know what for.
+    const int tidx = threadIdx.y * 16 + threadIdx.x; 
     const int loadY = tidx / 32, loadX = tidx % 32;
 
-    hidActs += blockCaseIdx + loadY * numImages * numModules + loadX;
+    hidActs += blockCaseIdx + loadY * numImages * numModules + loadX; // offset by loadY and loadX laodY represents the channel
     filters += threadIdx.x;
     targets += pxIdx * numImages + blockCaseIdx + threadIdx.x;
 
@@ -100,6 +100,9 @@ __global__ void img_acts_color(const float* hidActs, const float* filters, float
             prod[c][i] = 0;
         }
     }
+
+
+    // The following x and y location may be the location inside of the activation matrix.
     const int startY = blockRegionTop - paddingStart < filterSize ? 0
                         : 1 + (blockRegionTop - paddingStart - filterSize) / moduleStride;
     const int endY = MIN(numModulesY, 1 + (blockRegionTop + 3 - paddingStart) / moduleStride);
@@ -107,7 +110,7 @@ __global__ void img_acts_color(const float* hidActs, const float* filters, float
                         : 1 + (blockRegionLeft - paddingStart - filterSize) / moduleStride;
     const int endX = MIN(numModulesX, 1 + (blockRegionLeft + 3 - paddingStart) / moduleStride);
     
-    float* shilterLoad = &shFilters[threadIdx.y][threadIdx.x];
+    float* shilterLoad = &shFilters[threadIdx.y][threadIdx.x]; // The threads in the current block can cover the shFilters in one color channel.
     float* shHidActLoad = &shHidActs[loadY][loadX];
 
     for (int my = startY; my < endY; my++) {
@@ -124,7 +127,7 @@ __global__ void img_acts_color(const float* hidActs, const float* filters, float
 
             for (int f = 0; f < numFilters; f += 16) { // multiply with 16 filters at a time
                 // Now the threads split up into half-warps, and each half-warp decides if it's interested.
-                const float* hLoad = &hidActs[(moduleIdx + f * numModules) * numImages];
+                const float* hLoad = &hidActs[(moduleIdx + f * numModules) * numImages]; // here is the hidActs is offseted by the channel and the pixel.
                 #pragma unroll
                 for (int i = 0; i < imgsPerThread * 16; i += 32) {
                     if (!checkCaseBounds || blockCaseIdx + i + loadX < numImages) {
@@ -144,14 +147,12 @@ __global__ void img_acts_color(const float* hidActs, const float* filters, float
                     // This half-warp is interested, so it's going to load the weights from this module to its pixel.
                     // Not fully coalesced read :(
                     // But taking out this read entirely only reduces the runtime by ~2.8%, so it isn't costing me much.
-                    const float* fLoad = conv ? &filters[pxIdxInModule * numFilters + f]
+                    const float* fLoad = conv ? &filters[pxIdxInModule * numFilters + f]  // pxIdxInModule is the offset of the pixel in one channel of filter. and the f is the horizontal offset indicating the selected filter.
                                               : &filters[(moduleIdx * numColors * filterPixels + pxIdxInModule) * numFilters + f];
                     #pragma unroll
-                    for (int c = 0; c < numColors; c++) {
-                        shilterLoad[c * 16 * (16 + 1)] = fLoad[c * filterPixels * numFilters];
+                    for (int c = 0; c < numColors; c++) { // The interation of the color channels together with the thread indices can cover the whole shFilters.
+                        shilterLoad[c * 16 * (16 + 1)] = fLoad[c * filterPixels * numFilters];  // further offset shilterLoad and fLoad by thet color channel. 
                     }
-
-                    
                 }
 
                 __syncthreads();
@@ -163,7 +164,8 @@ __global__ void img_acts_color(const float* hidActs, const float* filters, float
                         for (int w = 0; w < 16; w++) {
                             #pragma unroll
                             for (int i = 0; i < imgsPerThread; i++) {
-                                prod[c][i] += shFilters[threadIdx.y + c * 16][w] * shHidActs[w][threadIdx.x + i * 16];
+                                prod[c][i] += shFilters[threadIdx.y + c * 16][w] * shHidActs[w][threadIdx.x + i * 16]; // The w for shHidActs represents the offset of the acts in channels
+                                // For one color in the filter, it needs to make product with all the colors in the acts.
                             }
                         }
                     }
@@ -948,7 +950,7 @@ void _imgActs(NVMatrix& hidActs, NVMatrix& filters, NVMatrix& targets,
     int numModulesX = numModules / numModulesY;
     
     assert(numImgColors % numGroups == 0);
-    assert(numFilters % (16*numGroups) == 0);
+    assert(numFilters % (16*numGroups) == 0); //TODO: This should be removed
     assert(numGroups > 1 || (numImgColors > 0 && (numImgColors <= 3 || numImgColors % 2 == 0)));
     assert(numGroups == 1 || numFilterColors % 4 == 0);
 

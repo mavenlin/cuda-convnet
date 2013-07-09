@@ -70,7 +70,7 @@ def process(perm, id2label, datadir, labelnum, batchsize, stordir, base=0):
 
     return dic
 
-def calcMean(datadir, r):
+def calcMean(datadir, r, dimData):
     sumlist = []
     meta = {}
     totalnum = 0
@@ -84,10 +84,13 @@ def calcMean(datadir, r):
         # get the file list from meta
         filelist = zipf.namelist()
         totalnum += len(filelist)
-        data = n.zeros((len(filelist), 3*256*256), dtype=n.float32)
+        data = n.zeros((len(filelist), dimData), dtype=n.float32)
         for i in range(len(filelist)):
             arr = n.array(Image.open(StringIO(zipf.read(filelist[i]))))
-            data[i, :] = n.concatenate([arr[:,:,0].flatten('C'), arr[:,:,1].flatten('C'), arr[:,:,2].flatten('C')])
+            if arr.ndim == 3:
+                data[i, :] = n.concatenate([arr[:,:,0].flatten('C'), arr[:,:,1].flatten('C'), arr[:,:,2].flatten('C')])
+            else:
+                data[i, :] = arr.flatten('C')
 
 	# print time()-t0
         # data = n.array(data)
@@ -112,6 +115,11 @@ if __name__ == "__main__":
     # map each of the foldeer to a number
     datadir = sys.argv[1]
     stordir = sys.argv[2]
+    imgSize  = sys.argv[3]
+    channels = sys.argv[4]
+
+    dimData = channels * imgSize**2
+    batchSize = sys.argv[5]
 
     # Read in all the Id 2 label Information
     ID2Label = open(os.path.join(datadir, 'ID2Label'))
@@ -120,7 +128,7 @@ if __name__ == "__main__":
         id2label[line[:9]]=line[11:].replace('\r\n','')
 
     # process imagenet
-    labelnum = int(sys.argv[3])
+    labelnum = int(sys.argv[6])
 
     # permute the id 2 label
     perm = n.random.permutation(id2label.keys())
@@ -132,15 +140,15 @@ if __name__ == "__main__":
     labelnames = labelnames[:labelnum]
 
     # process train and test
-    train = process(perm, id2label, os.path.join(datadir, 'train'), labelnum, 128, stordir, 0)
+    train = process(perm, id2label, os.path.join(datadir, 'train'), labelnum, batchSize, stordir, 0)
     trainidxnum = len(train['batch_idx'])
-    test  = process(perm, id2label, os.path.join(datadir, 'test'),  labelnum, 128, stordir, trainidxnum)
+    test  = process(perm, id2label, os.path.join(datadir, 'test'),  labelnum, batchSize, stordir, trainidxnum)
 
     # merge meta
     for i in range(len(test['batch_idx'])):
         test['batch_idx'][i] += trainidxnum
 
-    dic = {'data_name': 'image-net', 'num_colors': 3, 'batch_size': 128, 'num_vis': 256*256, 'image_size': 256}
+    dic = {'data_name': datadir, 'num_colors': channels, 'batch_size': batchSize, 'num_vis': channels * imgSize**2, 'image_size': imgSize}
     dic['batch_idx'] = train['batch_idx'] + test['batch_idx']
 
     for i in range(len(dic['batch_idx'])):
@@ -152,9 +160,9 @@ if __name__ == "__main__":
     print 'training batches: 1-'+str(trainidxnum)
 
     # calcmean
-    mean = calcMean(stordir, range(1, trainidxnum+1))
+    mean = calcMean(stordir, range(1, trainidxnum+1), dimData)
     dic['data_mean'] = mean
-    dic['num_cases_per_batch'] = 128
+    dic['num_cases_per_batch'] = batchSize
     dic['label_names'] = labelnames
     
     # dump meta
