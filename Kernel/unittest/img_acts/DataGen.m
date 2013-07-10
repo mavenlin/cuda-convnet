@@ -63,5 +63,5 @@ if img_acts
 end
 
 out = [imgSize, imgNum, imgColor, filterSize, filterNum, actSize, resultimg, randFilter, randActs];
-dlmwrite('C:\\Users\\linmin\\git\\cuda-convnet\\Kernel\\bin\\win64\\Debug\\img_acts', out, 'precision', '%.20f', 'delimiter', ' ');
+dlmwrite('test/img_acts', out, 'precision', '%.20f', 'delimiter', ' ');
 

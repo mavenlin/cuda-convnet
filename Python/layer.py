@@ -1054,7 +1054,7 @@ class PoolLayerParser(LayerWithInputParser):
         self.verify_num_range(dic['channels'], 'channels', 1, None)
         
         if LayerWithInputParser.grad_consumers_below(dic):
-            self.verify_divisible(dic['channels'], 16, 'channels')
+            self.verify_divisible(dic['channels'], 16, 'channels')  # verifies divisible by 16
         self.verify_str_in(dic['pool'], ['max', 'avg'])
         
         self.verify_img_size()
@@ -1097,7 +1097,7 @@ class NormLayerParser(LayerWithInputParser):
         self.verify_num_range(dic['channels'], 'channels', 1, None)
         if self.norm_type == self.CROSSMAP_RESPONSE_NORM: 
             self.verify_num_range(dic['size'], 'size', 2, dic['channels'])
-            if dic['channels'] % 16 != 0:
+            if dic['channels'] % 16 != 0:  # verifies divisible by 16
                 raise LayerParsingError("Layer '%s': number of channels must be divisible by 16 when using crossMap" % name)
         else:
             self.verify_num_range(dic['size'], 'size', 1, dic['imgSize'])
