@@ -439,7 +439,7 @@ __global__ void filterActs_YxX_sparse(float* images, float* filters, float* targ
  *
  * The imgSize here is the size of the actual image without the padding.
  */
-template <int B_Y, int B_X, int imgsPerThread, int filtersPerThread, int colorCache, bool scale, bool checkImgBounds, bool checkFilterBounds>
+template <int B_Y, int B_X, int imgsPerThread, int filtersPerThread, int colorCache, bool scale, bool checkImgBounds>
 __global__ void filterActs_YxX_sparse_random(float* images, float* filters, float* targets, int* colorIndices,
                                              const int numImages, const int numFilters,
                                              const int imgSizeY, const int imgSizeX, const int filterSize, const int paddingStart,
@@ -493,11 +493,11 @@ __global__ void filterActs_YxX_sparse_random(float* images, float* filters, floa
     }
 
     // define a variable to check the boundary of the filters.
-    bool isFilterOutOfBound = false;
-    if(checkFilterBounds) {
-        if(blockFilterIdx + shFilterLoadX >= numFilters)
-            isFilterOutOfBound = true;
-    }
+    // bool isFilterOutOfBound = false;
+    // if(checkFilterBounds) {
+    //     if(blockFilterIdx + shFilterLoadX >= numFilters)
+    //         isFilterOutOfBound = true;
+    // }
 
 //    __shared__ int imgPos[]
     for (int oc = 0; oc < numFilterColors; oc += colorCache) { // oc stands for outer color (loop)
@@ -514,7 +514,7 @@ __global__ void filterActs_YxX_sparse_random(float* images, float* filters, floa
             if (shFilterLoadY < B_Y) {
                 #pragma unroll
                 for (int p2 = 0; p2 < B_Y; p2 += B_X/filtersPerThread) {
-                    if (p + p2 + shFilterLoadY < filterPixels && !isFilterOutOfBound) {
+                    if (p + p2 + shFilterLoadY < filterPixels) {  // && !isFilterOutOfBound) {
                         #pragma unroll
                         for (int c = 0; c < colorCache; c++) {
                             shFilters[shFilterLoadY + p2 + c * B_Y][shFilterLoadX] = filters[((oc+c) * filterPixels + p + p2) * numFilters];
@@ -583,7 +583,7 @@ __global__ void filterActs_YxX_sparse_random(float* images, float* filters, floa
             if (!checkImgBounds || myImgIdx + g * B_X < numImages) {
                 #pragma unroll
                 for (int f = 0; f < filtersPerThread; f++) {
-                    if (!checkFilterBounds || blockFilterIdx + threadIdx.y + f * B_Y < numFilters)
+                    // if (!checkFilterBounds || blockFilterIdx + threadIdx.y + f * B_Y < numFilters)
                         targets[g * B_X + f * B_Y * numImages * numModules] = scaleTargets * targets[g * B_X + f * B_Y * numImages * numModules] + scaleOutputs * prod[f][g];
                 }
             }
@@ -594,7 +594,7 @@ __global__ void filterActs_YxX_sparse_random(float* images, float* filters, floa
             if (!checkImgBounds || myImgIdx + g * B_X < numImages) {
                 #pragma unroll
                 for (int f = 0; f < filtersPerThread; f++) {
-                    if (!checkFilterBounds || blockFilterIdx + threadIdx.y + f * B_Y < numFilters)
+                    // if (!checkFilterBounds || blockFilterIdx + threadIdx.y + f * B_Y < numFilters)
                         targets[g * B_X + f * B_Y * numImages * numModules] = scaleOutputs * prod[f][g];
                 }
             }

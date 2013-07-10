@@ -1,0 +1,227 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\..\..\src\convnet\util.cu" />
+    <CudaCompile Include="..\..\..\src\conv\conv_util.cu" />
+    <CudaCompile Include="..\..\..\src\conv\filter_acts.cu" />
+    <CudaCompile Include="..\..\..\src\conv\img_acts.cu" />
+    <CudaCompile Include="..\..\..\src\conv\weight_acts.cu" />
+    <CudaCompile Include="..\..\..\src\nvmatrix\nvmatrix.cu" />
+    <CudaCompile Include="..\..\..\src\nvmatrix\nvmatrix_kernels.cu" />
+    <CudaCompile Include="..\test.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\matrix\matrix.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1987B5DE-3702-3F2A-813C-3A0C54F000E9}</ProjectGuid>
+    <RootNamespace>pyconvnet</RootNamespace>
+    <ProjectName>pyconvnet</ProjectName>
+    <CudaToolkitCustomDir>$(CUDA_PATH)</CudaToolkitCustomDir>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseIntelMKL>Parallel</UseIntelMKL>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseIntelMKL>Parallel</UseIntelMKL>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 4.2.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../../../bin/win32/$(Configuration)/</OutDir>
+    <IntDir>$(Platform)/$(Configuration)/</IntDir>
+    <IncludePath>f:\dxsdk_jun10\include;$(DXSDK_DIR)\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../bin/win64/$(Configuration)/</OutDir>
+    <IntDir>$(Platform)/$(Configuration)/</IntDir>
+    <IncludePath>f:\dxsdk_jun10\include;$(DXSDK_DIR)\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../../../bin/win32/$(Configuration)/</OutDir>
+    <IntDir>$(Platform)/$(Configuration)/</IntDir>
+    <IncludePath>f:\dxsdk_jun10\include;$(DXSDK_DIR)\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>
+    </LinkIncremental>
+    <OutDir>./</OutDir>
+    <IntDir>$(Platform)/$(Configuration)/</IntDir>
+    <IncludePath>$(ProjectDir);$(ProjectDir)include;$(ProjectDir)include\common;$(ProjectDir)include\nvmatrix;$(ProjectDir)include\extra;$(ProjectDir)include\cudaconv2;$(ProjectDir)thirdparty;$(NVSDKCOMPUTE_ROOT)\CUDALibraries\common\inc;C:\Python27\include;C:\Python27\Lib\site-packages\numpy\core\include\numpy;$(CudaToolkitIncludeDir);$(IncludePath)</IncludePath>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(CudaToolkitIncludeDir);./;../../common/inc;../../../shared/inc;./include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>cudart.lib;curand.lib;cutil32D.lib;shrUtils32D.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CudaToolkitLibDir);../../../common/lib/$(PlatformName);../../../../shared/lib/$(PlatformName)</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)/$(TargetName)$(TargetExt)</OutputFile>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <CodeGeneration>compute_10,sm_10;compute_20,sm_20</CodeGeneration>
+      <Include>./;../../../common/inc;../../../../shared/inc</Include>
+      <Runtime>MTd</Runtime>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>C:\Python27\Lib\site-packages\numpy\core\include\numpy;..\..\..\..\thirdparty;.\;$(CudaToolkitIncludeDir);..\..\..\include\conv;..\..\..\include\matrix;..\..\..\include\convnet;..\..\..\include\nvmatrix;..\..\..\..\thirdparty\pthreads;C:\Python27\include;C:\Program Files (x86)\Intel\Composer XE 2013\mkl\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);USE_MKL;NUMPY_INTERFACE</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>pthreadVC2.lib;cublas.lib;cudart.lib;curand.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:/lib;$(CudaToolkitLibDir);C:/Python27/libs</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)/$(TargetName)$(TargetExt)</OutputFile>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <CodeGeneration>compute_10,sm_10;compute_20,sm_20</CodeGeneration>
+      <Include>$(ProjectDir);..\..\..\include;..\..\..\include\matrix;..\..\..\include\nvmatrix;..\..\..\include\conv;..\..\..\include\convnet;..\..\..\..\thirdparty\pthreads;..\..\..\..\thirdparty;C:\Python27\include;C:\Program Files (x86)\Intel\Composer XE 2013\mkl\include;C:\Python27\Lib\site-packages\numpy\core\include\numpy;$(NVSDKCOMPUTE_ROOT)\CUDALibraries\common\inc</Include>
+      <Defines>_WINDLL;USE_MKL;NUMPY_INTERFACE</Defines>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Runtime>MTd</Runtime>
+      <Keep>true</Keep>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>$(CudaToolkitIncludeDir);./;../../common/inc;../../../shared/inc</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>cudart.lib;curand.lib;cutil32.lib;shrUtils32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CudaToolkitLibDir);../../../common/lib/$(PlatformName);../../../../shared/lib/$(PlatformName)</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)/$(TargetName)$(TargetExt)</OutputFile>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <Include>./;../../../common/inc;../../../../shared/inc</Include>
+      <Runtime>MT</Runtime>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Intel\Composer XE 2013\mkl\include;C:\Python27\Lib\site-packages\numpy\core\include\numpy;C:\Python27\include;..\..\..\..\thirdparty;..\..\..\..\thirdparty\pthreads;..\..\..\include\nvmatrix;..\..\..\include\matrix;..\..\..\include\conv;$(CudaToolkitIncludeDir);.\</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);USE_MKL;NUMPY_INTERFACE</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>
+      </SubSystem>
+      <AdditionalDependencies>pthreadVC2.lib;cublas.lib;cudart.lib;curand.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:/lib;$(CudaToolkitLibDir);C:/Python27/libs</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)/$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>$(ProjectDir);..\..\..\include;..\..\..\include\matrix;..\..\..\include\nvmatrix;..\..\..\include\conv;..\..\..\..\thirdparty\pthreads;..\..\..\..\thirdparty;$(MKLIncludeDir);C:\Python27\include;C:\Python27\Lib\site-packages\numpy\core\include\numpy;$(NVSDKCOMPUTE_ROOT)\CUDALibraries\common\inc</Include>
+      <Runtime>MT</Runtime>
+      <Defines>_WINDLL;USE_MKL;NUMPY_INTERFACE</Defines>
+      <CodeGeneration>compute_20,sm_20</CodeGeneration>
+      <Optimization>O2</Optimization>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 4.2.targets" />
+  </ImportGroup>
+</Project>
