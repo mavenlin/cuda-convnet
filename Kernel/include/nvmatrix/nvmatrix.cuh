@@ -32,6 +32,7 @@
 #define RND_MULTIPLIERS_FILE ("rnd_multipliers_32bit.txt")
 #endif
 
+#include "pthread.h"
 #include <map>
 #include <cublas.h>
 #include <cuda.h>

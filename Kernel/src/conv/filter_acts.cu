@@ -656,9 +656,9 @@ __global__ void filterActs_YxX_sparse_random(float* images, float* filters, floa
     assert(targets.isContiguous());
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     dim3 blocks = numFiltersPerGroup >= 32 ? dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters), (4 * 8)))
-                                            : numFiltersPerGroup >= 16 ? dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters) / (4 * 4)))
-                                            : numFiltersPerGroup >= 8  ? dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters) / (4 * 2)))
-                                            : dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters) / (4 * 1)));
+                                            : numFiltersPerGroup >= 16 ? dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters), (4 * 4)))
+                                            : numFiltersPerGroup >= 8  ? dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters), (4 * 2)))
+                                            : dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters), (4 * 1)));
     dim3 threads(32, 4);
     bool checkImgBounds = numImages % (32*imgsPerThread) != 0;
     if (scaleTargets == 0) {
