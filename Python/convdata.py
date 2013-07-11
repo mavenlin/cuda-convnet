@@ -179,7 +179,16 @@ class CroppedJPEGDataProvider(JPEGDataProvider):
             cropped = cropped[:, :datadic['data'].shape[1]]
 
         self.__trim_borders(datadic['data'], cropped)
-        cropped -= self.data_mean
+        
+        # demean
+        # cropped -= self.data_mean
+        
+        # normalize to 0 - 1
+        casemin = n.amin(cropped, axis=0)
+        casemax = n.amax(cropped, axis=0)
+        cropped -= casemin
+        cropped /= (casemax - casemin)
+
         self.batches_generated += 1
         datadic['labels'] = n.require(datadic['labels'], dtype=n.float32)
         datadic['labels'] = n.require(n.tile(datadic['labels'].reshape((1, cropped.shape[1])), (1, self.data_mult)), dtype=n.float32, requirements='C')
