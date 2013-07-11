@@ -62,8 +62,8 @@ __global__ void filterActs_YxX_color(float* images, float* filters, float* targe
                                    const int numModulesY, const int numModulesX, const int imgStride,
                                    const float scaleTargets, const float scaleOutputs,
                                    const bool conv) {
-    __shared__ float shFilters[B_Y*numColors][B_Y * filtersPerThread]; // pre-load B_Y pixels from B_Y*filtersPerThread filters
-    __shared__ float shImages[B_Y*numColors][B_X * imgsPerThread]; // pre-load B_Y pixels from B_X*imgsPerThread images
+    __shared__ float shFilters[B_Y * numColors][B_Y * filtersPerThread]; // pre-load B_Y pixels from B_Y*filtersPerThread filters
+    __shared__ float shImages[B_Y * numColors][B_X * imgsPerThread]; // pre-load B_Y pixels from B_X*imgsPerThread images
     const int imgPixels = imgSizeY * imgSizeX;
     const int filterPixels = filterSize * filterSize;
 
@@ -129,10 +129,13 @@ __global__ void filterActs_YxX_color(float* images, float* filters, float* targe
         if (shFilterLoadY < B_Y) {
             #pragma unroll
             for (int p2 = 0; p2 < B_Y; p2 += B_X/filtersPerThread) {
-                if (p + p2 + shFilterLoadY < filterPixels && !isFilterOutOfBound) {
+                if (p + p2 + shFilterLoadY < filterPixels && !isFilterOutOfBound) { // && !isFilterOutOfBound
                     #pragma unroll
                     for (int c = 0; c < numColors; c++) {
-                        shFilters[shFilterLoadY + p2 + c * B_Y][shFilterLoadX] = filters[(c * filterPixels + p + p2) * numFilters];
+						// if (filtersPerThread * B_Y * blockFilterIdx + shFilterLoadX < numFilters)
+						shFilters[shFilterLoadY + p2 + c * B_Y][shFilterLoadX] = filters[(c * filterPixels + p + p2) * numFilters];
+						// else
+						//	  shFilters[shFilterLoadY + p2 + c * B_Y][shFilterLoadX] = 0;
                     }
                 } else {
                     #pragma unroll
@@ -655,10 +658,10 @@ __global__ void filterActs_YxX_sparse_random(float* images, float* filters, floa
     assert(filters.isContiguous());
     assert(targets.isContiguous());
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
-    dim3 blocks = numFiltersPerGroup >= 32 ? dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters), (4 * 8)))
-                                            : numFiltersPerGroup >= 16 ? dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters), (4 * 4)))
-                                            : numFiltersPerGroup >= 8  ? dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters), (4 * 2)))
-                                            : dim3(DIVUP(numImages, 32 * imgsPerThread), DIVUP((numModules * numFilters), (4 * 1)));
+    dim3 blocks = numFiltersPerGroup >= 32 ? dim3(DIVUP(numImages, 32 * imgsPerThread), numModules * DIVUP(numFilters, (4 * 8)))
+                                            : (numFiltersPerGroup >= 16 ? dim3(DIVUP(numImages, 32 * imgsPerThread), numModules * DIVUP(numFilters, (4 * 4)))
+                                            : (numFiltersPerGroup >= 8  ? dim3(DIVUP(numImages, 32 * imgsPerThread), numModules * DIVUP(numFilters, (4 * 2)))
+                                            : dim3(DIVUP(numImages, 32 * imgsPerThread), numModules * DIVUP(numFilters, (4 * 1)))));
     dim3 threads(32, 4);
     bool checkImgBounds = numImages % (32*imgsPerThread) != 0;
     if (scaleTargets == 0) {
