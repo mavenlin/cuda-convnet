@@ -252,7 +252,7 @@ __global__ void filterActs_YxX_color(float* images, float* filters, float* targe
  * numFilters must be divisible by numGroups.
  *
  * The imgSize here is the size of the actual image without the padding.
- *
+ * 4, 32, 4, 8, 2, false, false, false
  */
 template <int B_Y, int B_X, int imgsPerThread, int filtersPerThread, int colorCache,
           bool scale, bool checkImgBounds, bool checkFilterBounds>

@@ -1025,7 +1025,7 @@ SumOfSquaresCostLayer::SumOfSquaresCostLayer(ConvNet* convNet, PyObject* paramsD
 void SumOfSquaresCostLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
     _inputs[0]->apply(NVMatrixOps::Square(), getActs());
     _costv.clear();
-    _costv.push_back(getActs().sum());
+    _costv.push_back(0.5*getActs().sum()); // Look at the bpropActs and the fpropActs, they are not consistant, we need 0.5*x^2 so that the gradient would be x
 }
 
 void SumOfSquaresCostLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {

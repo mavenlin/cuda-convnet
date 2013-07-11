@@ -280,7 +280,7 @@ void ConvNet::checkGradients() {
 
 /*
  * name: weight matrix name
- * eps: finite difference step
+ * eps: finite difference step 0.001 & 0.002 for conv
  */
 bool ConvNet::checkGradient(const string& name, float eps, Weights& weights) {
     Matrix numGrad(weights.getNumRows(), weights.getNumCols());
