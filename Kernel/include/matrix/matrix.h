@@ -27,7 +27,7 @@
 #ifndef MATRIX_H_
 #define MATRIX_H_
 
-// #define USE_MKL
+#define USE_MKL
 
 #include <matrix_funcs.h>
 #ifdef NUMPY_INTERFACE
