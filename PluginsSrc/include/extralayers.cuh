@@ -74,7 +74,7 @@ protected:
         else
             // This condition will never be called by the PASS_TEST
             // it is here in case of PASS_CG
-            actsGrad.applyBinary(AddGradientOperator<DropoutOperator>(NVMatrixOps::MultByScalar(1 - _dropoutprob)), target, target);
+            actsGrad.applyBinary(AddGradientOperator<NVMatrixOps::MultByScalar>(NVMatrixOps::MultByScalar(1 - _dropoutprob)), target, target);
     }
 
 public:
