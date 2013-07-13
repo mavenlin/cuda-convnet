@@ -67,41 +67,24 @@ protected:
     bool _activated;
     // Inputs and outputs potentially point to the same matrix, depending on the neuron
     NVMatrix* _inputs, *_outputs; 
-    virtual void _activate() {
+
+    virtual void _activate(PASS_TYPE passtype) {
         if (_inputs != _outputs) { // They do not share the same memory
             _inputs->copy(*_outputs); // Here copy means copy to, but not copy from.
         }
     }
 
-    virtual void _activate(PASS_TYPE passtype) {
-        // The default behavior is unused the passtype parameter and call the _activate function without parameter.
-        // If the operation of the neuron needs the information of the passtype, then should override this function.
-        // Else overload the one without parameter instead.
-        this->_activate();
-    }
-
-    virtual void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    virtual void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         if (&target != &actsGrad) { // They do not share the same memory.
             actsGrad.copy(target); // Copy to target. Copy gradient of activation to target.
         }
     }
 
-    virtual void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
-        // If the operation of the neuron needs the information of the passtype, then should override this function.
-        // Else overload the one without parameter instead.
-        this->_computeInputGrad(actsGrad, target);
-    }
-
-    virtual void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    virtual void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
+        // Unuse passType by default
         if (&target != &actsGrad) { // They do not share the same memory
             target.add(actsGrad); // Add the gradient of the activation to the target. The target may get gradient from multiple places.
         }
-    }
-
-    virtual void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
-        // If the operation of the neuron needs the information of the passtype, then should override this function.
-        // Else overload the one without parameter instead.
-        this->_addInputGrad(actsGrad, target);
     }
 public:
     // These public functions are not overlaoded in any subclasses.
@@ -136,15 +119,15 @@ public:
  */
 class LogisticNeuron : public Neuron {
 protected:
-    void _activate() {
+    void _activate(PASS_TYPE passtype) {
         _inputs->apply(NVMatrixOps::Logistic(), *_outputs);
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyBinary(LogisticGradientOperator(), *_outputs, target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyTernary(AddGradientBinaryOperator<LogisticGradientOperator>(LogisticGradientOperator()), *_outputs, target, target);
     }
 public:
@@ -168,15 +151,15 @@ public:
  */
 class ReluNeuron : public Neuron {
 protected:
-    void _activate() {
+    void _activate(PASS_TYPE passtype) {
         _inputs->apply(ReluOperator(), *_outputs);
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyBinary(ReluGradientOperator(), *_outputs, target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyTernary(AddGradientBinaryOperator<ReluGradientOperator>(ReluGradientOperator()), *_outputs, target, target);
     }
 public:
@@ -209,15 +192,15 @@ class BoundedReluNeuron : public Neuron {
 protected:
     float _a;
     
-    void _activate() {
+    void _activate(PASS_TYPE passtype) {
         _inputs->apply(BoundedReluOperator(_a), *_outputs);
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyBinary(BoundedReluGradientOperator(_a), *_outputs, target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyTernary(AddGradientBinaryOperator<BoundedReluGradientOperator>(BoundedReluGradientOperator(_a)), *_outputs, target, target);
     }
 public:
@@ -256,16 +239,16 @@ public:
  */
 class AbsNeuron : public Neuron {
 protected:
-    void _activate() {
+    void _activate(PASS_TYPE passtype) {
         assert(_inputs != _outputs);
         _inputs->apply(NVMatrixOps::Abs(), *_outputs);
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyBinary(AbsGradientOperator(), *_inputs, target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyTernary(AddGradientBinaryOperator<AbsGradientOperator>(AbsGradientOperator()), *_inputs, target, target);
     }
 public:
@@ -291,15 +274,15 @@ class TanhNeuron : public Neuron {
 protected:
     float _a, _b;
 
-    void _activate() {
+    void _activate(PASS_TYPE passtype) {
         _inputs->apply(TanhOperator(_a, _b), *_outputs);
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyBinary(TanhGradientOperator(_a, _b), *_outputs, target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyTernary(AddGradientBinaryOperator<TanhGradientOperator>(TanhGradientOperator(_a, _b)), *_outputs, target, target);
     }
 public:
@@ -339,16 +322,16 @@ public:
  */
 class SoftReluNeuron : public Neuron {
 protected:
-    void _activate() {
+    void _activate(PASS_TYPE passtype) {
         assert(_inputs != _outputs);
         _inputs->apply(SoftReluOperator(), *_outputs);
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyBinary(SoftReluGradientOperator(), *_outputs, target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyTernary(AddGradientBinaryOperator<SoftReluGradientOperator>(SoftReluGradientOperator()), *_outputs, target, target);
     }
 public:
@@ -385,16 +368,16 @@ public:
  */
 class SquareNeuron : public Neuron {
 protected:
-    void _activate() {
+    void _activate(PASS_TYPE passtype) {
         assert(_inputs != _outputs);
         _inputs->apply(NVMatrixOps::Square(), *_outputs);
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyBinary(SquareGradientOperator(), *_inputs, target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyTernary(AddGradientBinaryOperator<SquareGradientOperator>(SquareGradientOperator()), *_inputs, target, target);
     }
 public:
@@ -418,15 +401,15 @@ public:
  */
 class SqrtNeuron : public Neuron {
 protected:
-    void _activate() {
+    void _activate(PASS_TYPE passtype) {
         _inputs->apply(NVMatrixOps::Sqrt(), *_outputs);
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyBinary(SqrtGradientOperator(), *_outputs, target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyTernary(AddGradientBinaryOperator<SqrtGradientOperator>(SqrtGradientOperator()), *_outputs, target, target);
     }
 public:
@@ -451,15 +434,15 @@ public:
 class LinearNeuron : public Neuron {
 protected:
     float _a, _b;
-    void _activate() {
+    void _activate(PASS_TYPE passtype) {
         _inputs->apply(LinearOperator(_a, _b), *_outputs);
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.scale(_a, target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
         actsGrad.applyBinary(AddGradientOperator<NVMatrixOps::MultByScalar>(NVMatrixOps::MultByScalar(_a)), target, target);
     }
 public:
