@@ -31,6 +31,7 @@
 #include <string>
 #include <nvmatrix.cuh>
 #include <cutil_inline.h>
+#include "util.cuh"
 
 template <class GradientOp>
 class AddGradientBinaryOperator {
@@ -71,33 +72,55 @@ protected:
             _inputs->copy(*_outputs); // Here copy means copy to, but not copy from.
         }
     }
+
+    virtual void _activate(PASS_TYPE passtype) {
+        // The default behavior is unused the passtype parameter and call the _activate function without parameter.
+        // If the operation of the neuron needs the information of the passtype, then should override this function.
+        // Else overload the one without parameter instead.
+        this->_activate();
+    }
+
     virtual void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
         if (&target != &actsGrad) { // They do not share the same memory.
             actsGrad.copy(target); // Copy to target. Copy gradient of activation to target.
         }
     }
+
+    virtual void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
+        // If the operation of the neuron needs the information of the passtype, then should override this function.
+        // Else overload the one without parameter instead.
+        this->_computeInputGrad(actsGrad, target);
+    }
+
     virtual void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
         if (&target != &actsGrad) { // They do not share the same memory
             target.add(actsGrad); // Add the gradient of the activation to the target. The target may get gradient from multiple places.
         }
     }
+
+    virtual void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passtype) {
+        // If the operation of the neuron needs the information of the passtype, then should override this function.
+        // Else overload the one without parameter instead.
+        this->_addInputGrad(actsGrad, target);
+    }
 public:
+    // These public functions are not overlaoded in any subclasses.
     Neuron() : _activated(false), _inputs(NULL), _outputs(NULL) {
     }
-    virtual void activate(NVMatrix& inputs, NVMatrix& outputs) {
+    virtual void activate(NVMatrix& inputs, NVMatrix& outputs, PASS_TYPE passtype) {
         _activated = true;
         _inputs = &inputs;
         _outputs = &outputs;
-        _activate();
+        _activate(passtype);
     }
 
-    virtual void computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, bool add) {
+    virtual void computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, bool add, PASS_TYPE passtype) {
         assert(_activated);
         if (!add) {
             target.resize(actsGrad); // resize target to the size of actsGrad
-            _computeInputGrad(actsGrad, target);
+            _computeInputGrad(actsGrad, target, passtype);
         } else {
-            _addInputGrad(actsGrad, target);
+            _addInputGrad(actsGrad, target, passtype);
         }
     }
         

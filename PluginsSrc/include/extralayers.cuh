@@ -4,6 +4,7 @@
 #include "layer.cuh"
 #include "neuron.cuh"
 #include "extrautils.cuh"
+#include "nvmatrix_operators.cuh"
 
 /***************************************
  * Group Sparsity Cost in Sample Domain for each feature map
@@ -35,27 +36,45 @@ protected:
 	NVMatrix * _dropout;
 	float _dropoutprob; // This should be initialized in the Neuron Constructor
 
-    void _activate() {
+    virtual void _activate(PASS_TYPE passType) {
     	
-    	// If the _dropout is not the same size as the input, resize the dropout to match the input
-    	if(!_inputs->isSameDims(*_dropout))
-    		_dropout->resize(*_inputs);
+        if (passType == PASS_TRAIN) {
+            // If the _dropout is not the same size as the input, resize the dropout to match the input
+            if(!_inputs->isSameDims(*_dropout))
+                _dropout->resize(*_inputs);
 
-    	// randomize the dropouts in between [0-1] with uniform distribution
-    	_dropout->randomizeUniform();
+            // randomize the dropouts in between [0-1] with uniform distribution
+            // TODO Check whether we need to initialize anything to make the random number generater work
+            _dropout->randomizeUniform();
 
-    	// set the elements at the position where _dropout[position] < _dropoutprob
-        _inputs->applyBinary(DropoutOperator(_dropoutprob), *_dropout, *_outputs);
+            // set the elements at the position where _dropout[position] < _dropoutprob
+            // ? How to share the output from the inputs?
+            _inputs->applyBinary(DropoutOperator(_dropoutprob), *_dropout, *_outputs);
+        }
+        else { // eithter PASS_GC or PASS_TEST, because for PASS_GC, the network structure is not supposed to change in fprop
+            _inputs->apply(NVMatrixOps::MultByScalar(1 - _dropoutprob), *_outputs);
+        }
+    	
     }
 
-    void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
+    virtual void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passType) {
 
-    	// Also set part of the gradients to zero at the same position as the activations
-        actsGrad.applyBinary(DropoutOperator(_dropoutprob), *_dropout, target);
+        if (passType == PASS_TRAIN)
+    	   // Also set part of the gradients to zero at the same position as the activations
+            actsGrad.applyBinary(DropoutOperator(_dropoutprob), *_dropout, target);
+        else
+            // This condition will never be called by the PASS_TEST
+            // it is here in case of PASS_CG
+            actsGrad.apply(NVMatrixOps::MultByScalar(1 - _dropoutprob), target);
     }
     
-    void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target) {
-        actsGrad.applyTernary(AddGradientBinaryOperator<DropoutOperator>(DropoutOperator(_dropoutprob)), *_dropout, target, target);
+    virtual void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passType) {
+        if (passType == PASS_TRAIN)
+            actsGrad.applyTernary(AddGradientBinaryOperator<DropoutOperator>(DropoutOperator(_dropoutprob)), *_dropout, target, target);
+        else
+            // This condition will never be called by the PASS_TEST
+            // it is here in case of PASS_CG
+            actsGrad.applyBinary(AddGradientOperator<DropoutOperator>(NVMatrixOps::MultByScalar(1 - _dropoutprob)), target, target);
     }
 
 public:

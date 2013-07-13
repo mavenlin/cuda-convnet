@@ -252,11 +252,11 @@ NeuronLayer::NeuronLayer(ConvNet* convNet, PyObject* paramsDict)
 }
 
 void NeuronLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {
-    _neuron->computeInputGrad(v, _prev[0]->getActsGrad(), scaleTargets > 0); // if scaleTargets > 0 then the gradient will be added instead of assigned.
+    _neuron->computeInputGrad(v, _prev[0]->getActsGrad(), scaleTargets > 0, passType); // if scaleTargets > 0 then the gradient will be added instead of assigned.
 }
 
 void NeuronLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
-    _neuron->activate(*_inputs[0], getActs());
+    _neuron->activate(*_inputs[0], getActs(), passType);
 }
 
 /* 
