@@ -181,13 +181,13 @@ class CroppedJPEGDataProvider(JPEGDataProvider):
         self.__trim_borders(datadic['data'], cropped)
         
         # demean
-        # cropped -= self.data_mean
+        cropped -= self.data_mean
         
         # normalize to 0 - 1
-        casemin = n.amin(cropped, axis=0)
-        casemax = n.amax(cropped, axis=0)
-        cropped -= casemin
-        cropped /= (casemax - casemin)
+        # casemin = n.amin(cropped, axis=0)
+        # casemax = n.amax(cropped, axis=0)
+        # cropped -= casemin
+        # cropped /= (casemax - casemin)
 
         self.batches_generated += 1
         datadic['labels'] = n.require(datadic['labels'], dtype=n.float32)
