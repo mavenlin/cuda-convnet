@@ -115,17 +115,17 @@ if __name__ == "__main__":
     # map each of the foldeer to a number
     datadir = sys.argv[1]
     stordir = sys.argv[2]
-    imgSize  = sys.argv[3]
-    channels = sys.argv[4]
+    imgSize  = int(sys.argv[3])
+    channels = int(sys.argv[4])
 
     dimData = channels * imgSize**2
-    batchSize = sys.argv[5]
+    batchSize = int(sys.argv[5])
 
     # Read in all the Id 2 label Information
     ID2Label = open(os.path.join(datadir, 'ID2Label'))
     id2label = {}
     for line in ID2Label:
-        id2label[line[:9]]=line[11:].replace('\r\n','')
+        id2label[line[:1]]=line[2:].replace('\r\n','')
 
     # process imagenet
     labelnum = int(sys.argv[6])
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     dic['batch_idx'] = train['batch_idx'] + test['batch_idx']
 
     for i in range(len(dic['batch_idx'])):
-        dic['batch_idx'] += 1
+        dic['batch_idx'][i] += 1
 
     dic['label_batches'] = train['label_batches'] + test['label_batches']
     dic['image_batches'] = train['image_batches'] + test['image_batches']
