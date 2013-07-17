@@ -44,68 +44,150 @@ void sparse_histogram(float * input, int num, device_vector<float>& histogram_va
 // acts is of size channels*imagePixels x numCases
 // labels is of size 1 x numCases
 // B_Y and B_X is the dimension of the block.
-template <int B_Y, int B_X>
-__global__ void CalculateSqrtSumSquare(float * labels, float * acts, float * values, int * counts, float * target, int channels, int imagePixels, int numCases, int numLabels)
+
+// numBlocksX = DIVUP(numCases, B_X)
+// numBlocksY = channels * DIVUP(imagePixels, B_Y*PixelsPerThread)
+// temporary (numBlocksY, numBlocksX*numLabels)
+// Pass the num of Labels as the init size of the hist shared memory
+template <int B_Y, int B_X, int PixelsPerThread>
+__global__ void CalculateSqrtSumSquare(float * labels, float * acts, float * values, int * counts, float * target, float * temp, int channels, int imagePixels, int numCases, int numLabels)
 {
-	int labelIdx      = blockIdx.x * B_X + threadIdx.x;
-	if(labelIdx >= numLabels)
-		return;
-	float label       = values[labelIdx];
-	int channelIdx    = blockIdx.y * B_Y + threadIdx.y;
-	if(channelIdx >= channels)
-		return;
-	int pixelStartIdx = channelIdx * imagePixels;
-	int targetIdx     = numLabels * channelIdx + labelIdx;
-	for(int i = 0; i < numCases; i++){
-		if(labels[i] == label)
-			for(int j = 0; j < imagePixels; j++){
-				target[targetIdx] += pow(acts[(pixelStartIdx+j)*numCases + i], 2);
-			}
+	extern __shared__ float hist[];
+	__shared__ float shLabel[B_X];
+	__shared__ float partial[B_Y][B_X];
+	partial[threadIdx.y][threadIdx.x] = 0;
+	if (threadIdx.y == 0)
+		shLabel[threadIdx.x] = labels[threadIdx.x + blockIdx.x * B_X];
+	__syncthreads();
+
+	int numBlocksPerChannel = DIVUP(imagePixels, B_Y * PixelsPerThread);
+	int blkIdxInChannel = blockIdx.y % numBlocksPerChannel;
+	int channelIndex = blockIdx.y / numBlocksPerChannel;
+	int numBlocksX = DIVUP(numCases, B_X);
+
+	acts += threadIdx.x + blockIdx.x * B_X \             // offset by cases
+			threadIdx.y * numCases + \                   // offset by thread in one block
+			channelIdx * imagePixels * numCases + \      // offset by channel
+			blkIdxInChannel * B_Y * PixelsPerThread * numCases;     //offset by block inside of channel
+
+	#pragma unroll
+	for (int i=0; i<imagePixels; i+=PixelsPerThread) {
+		if (blkIdxInChannel * B_Y * PixelsPerThread + threadIdx.y + i < imagePixels)
+			partial[threadIdx.y][threadIdx.x] += acts[i*numCases] * acts[i*numCases];
 	}
-	// multiply by the length of the group
-	target[targetIdx] *= counts[labelIdx];
-	target[targetIdx] = sqrt(target[targetIdx]);
+	__syncthreads();
+
+	// Since now the data are all in the shared memory, we don't need to consider the coalesced operation on the memory.
+	int tidx = threadIdx.y * B_X + threadIdx.x;
+	int numRounds = DIVUP(numLabels, B_X * B_Y);
+	for (int i=0; i<numLabels; i+=B_X*B_Y)
+		if (i+tidx<numLabels)
+			hist[i+tidx] = 0;
+
+	for (int i=0; i<numLabels; i+=B_X*B_Y) {
+		#pragma unroll
+		for (int j=0; j<B_X; j++) {
+			if (i + tidx < numLabels && shLabel[j] == values[i+tidx])
+				#pragma unroll
+				for (int k=0; k<B_Y; k++)
+					hist[i+tidx] += partial[k][j];
+		}
+		hist[i+tidx] *= counts[i+tidx];
+	}
+	__syncthreads();
+
+	float * tmp = temp + (channelIdx * numBlocksPerChannel * numBlocksX + blkIdxInChannel * numBlocksX + blockIdx.x) * numLabels;
+	for (int i=0; i<numLabels; i+=B_X*B_Y)
+		if (tidx+i<numLabels)
+			tmp[tidx+i] = hist[tidx+i];
+	__syncthreads();
+
+	int chan = blockIdx.y;
+	int labelIdx = threadIdx.x + B_X * blockIdx.x;
+	if (chan < channels){
+		if (threadIdx.y == 0 && labelIdx < numLabels) {
+			target[chan*numLabels+labelIdx] = 0;
+			for (int i=0; i<numBlocksX*numBlocksPerChannel; i++)
+				target[chan*numLabels+labelIdx] += temp[(chan*numBlocksX*numBlocksPerChannel+i)*numLabels+labelIdx];
+			target[chan*numLabels+labelIdx] = sqrt(target[chan*numLabels+labelIdx]);
+		}
+	}
+
 }
 
 float CalculateSqrtSumSquareMatrix(NVMatrix& labels, NVMatrix& acts, thrust::device_vector<float>& values, thrust::device_vector<int>& counts, NVMatrix& target, int channels, int imagePixels)
 {
 	assert(acts.getNumRows() == channels*imagePixels);
 
-	int gridydim = DIVUP(channels, 16);
-	int gridxdim = DIVUP(counts.size(), 32);
+	int B_X = 32;
+	int B_Y = 8;
+	int numCases = acts.getNumCols();
+	int PixelsPerThread = 32;
+	int gridydim = channels * DIVUP(imagePixels, B_Y*PixelsPerThread);
+	int gridxdim = DIVUP(numCases, B_X);
+
+	int numBlocksPerChannel = DIVUP(imagePixels, B_Y * PixelsPerThread);
+	int numBlocksX = DIVUP(numCases, B_X);
+	
+	NVMatrix temp(numBlocksX*numBlocksPerChannel*channels, numLabels);
+
 	dim3 blocks(gridxdim, gridydim); // The dimension of the grid
-	dim3 threads(32, 16);            // The dimension of the block, 32 x 16 = 512, which is the thread number available inside a block for compute compatibility<2.0.
+	dim3 threads(B_X, B_Y);            // The dimension of the block, 32 x 16 = 512, which is the thread number available inside a block for compute compatibility<2.0.
 	float * values_ptr = thrust::raw_pointer_cast(values.data());
 	int * counts_ptr = thrust::raw_pointer_cast(counts.data());
-	CalculateSqrtSumSquare<16,32><<<blocks, threads>>>(labels.getDevData(), acts.getDevData(), values_ptr, counts_ptr, target.getDevData(), channels, imagePixels, labels.getNumElements(), counts.size());
+	CalculateSqrtSumSquare<8, 32, 32><<<blocks, threads, counts.size()>>>(labels.getDevData(), acts.getDevData(), values_ptr, counts_ptr, target.getDevData(), temp.getDevData(), channels, imagePixels, numCases, counts.size());
 	return target.sum();
 }
 
-template <int B_Y, int B_X>
+
+// Blocks Y are used for pixels and channels
+// numBlocksY = channels * DIVUP(imgPixels, PixelsPerThread * B_Y)
+// Blocks X are used for Samples
+// numBlocksX = DIVUP(numCases, B_X)
+// The shared memory size should be three times the size of numLabels.
+template <int B_Y, int B_X, int PixelsPerThread>
 __global__ void kCalculateGradient(float * acts, float * labels, float * sqrts, float * values, int * counts, int numLabels, int channels, int imagePixels, int numCases, float * target)
 {
-	int labelIdx = blockIdx.x * B_X + threadIdx.x;
-	if(labelIdx >= numLabels)
-		return;
-	float label = values[labelIdx];
-	int channelIdx = blockIdx.y * B_Y + threadIdx.y;
-	if(channelIdx >= channels)
-		return;
-	int pixelStartIdx = channelIdx * imagePixels;
-	for(int i = 0; i < numCases; i++) {
-		if(labels[i] == label)
-			for(int j = 0; j < imagePixels; j++){
-				int targetIdx = (pixelStartIdx+j)*numCases + i;
-				target[targetIdx] = acts[targetIdx]/(sqrts[channelIdx*numLabels+labelIdx]+2e-7); // TODO: handle the case when the denominator is very small.
-			}
+	int numBlocksPerChannel = DIVUP(imagePixels, B_Y * PixelsPerThread);
+	int blkIdxInChannel = blockIdx.y % numBlocksPerChannel;
+	int channelIndex = blockIdx.y / numBlocksPerChannel;
+	int numBlocksX = DIVUP(numCases, B_X);
+
+	extern __shared__ float shSqrt[];
+
+	int tidx = threadIdx.x + threadIdx.y * B_X;
+	for (int i=0; i<numLabels; i+=B_X*B_Y)
+		if (i + tidx < numLabels) {
+			shSqrt[i+tidx] = sqrts[numLabels*channelIndex + i + tidx];
+			shSqrt[i+tidx+numLabels] = values[i+tidx];
+			shSqrt[i+tidx+2*numLabels] = counts[i+tidx];
+		}
+	__syncthreads();
+
+	target += (channelIndex * imagePixels + blkIdxInChannel * B_Y * PixelsPerThread  + threadIdx.y) * numCases + threadIdx.x + B_X * blockIdx.x;
+	acts += (channelIndex * imagePixels + blkIdxInChannel * B_Y * PixelsPerThread + threadIdx.y) * numCases + threadIdx.x + B_X * blockIdx.x;
+
+	int caseIndex = threadIdx.x + B_X * blockIdx.x;
+	if (caseIndex < numCases) {
+		for (int i=0; i<imagePixels; i+=PixelsPerThread)
+			if (blkIdxInChannel * B_Y * PixelsPerThread + threadIdx.y + i < imagePixels)
+				for (int j=0; j<numLabels; j++){
+					if (shSqrt[numLabels+j]==labels[caseIndex])
+						target[i*numCases] = shSqrt[2*numLabels+j]*acts[i*numCases] / (shSqrt[j] + 2.5e-7); // EPS
+				}
 	}
+
 }
 
 void CalculateGradient(NVMatrix& acts, NVMatrix& labels, NVMatrix& sqrts, thrust::device_vector<float>& values, thrust::device_vector<int>& counts, int channels, int imagePixels, int numCases, NVMatrix& target)
 {
-	int gridydim = DIVUP(channels, 16);
-	int gridxdim = DIVUP(counts.size(), 32);
+	int B_X = 32;
+	int B_Y = 8;
+	int numCases = acts.getNumCols();
+	int PixelsPerThread = 16;
+	int gridydim = channels * DIVUP(imagePixels, B_Y*PixelsPerThread);
+	int gridxdim = DIVUP(numCases, B_X);
 	dim3 blocks(gridxdim, gridydim); // The dimension of the grid
-	dim3 threads(32, 16);            // The dimension of the block, 32 x 16 = 512, which is the thread number available inside a block for compute compatibility<2.0.
-	kCalculateGradient<16,32><<<blocks, threads>>>(acts.getDevData(), labels.getDevData(), sqrts.getDevData(), thrust::raw_pointer_cast(values.data()), thrust::raw_pointer_cast(counts.data()), counts.size(), channels, imagePixels, numCases, target.getDevData());
+	dim3 threads(B_X, B_Y);            // The dimension of the block, 32 x 16 = 512, which is the thread number available inside a block for compute compatibility<2.0.
+	kCalculateGradient<8,32,16><<<blocks, threads, counts.size()>>>(acts.getDevData(), labels.getDevData(), sqrts.getDevData(), thrust::raw_pointer_cast(values.data()), thrust::raw_pointer_cast(counts.data()), counts.size(), channels, imagePixels, numCases, target.getDevData());
 }

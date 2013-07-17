@@ -33,6 +33,7 @@ import random as r
 import numpy.random as nr
 from convnet import ConvNet
 from options import *
+import scipy
 
 try:
     import pylab as pl
@@ -179,6 +180,77 @@ class ShowConvNet(ConvNet):
 
         self.make_filter_fig(filters, filter_start, 2, 'Layer %s' % self.show_filters, num_filters, combine_chans)
     
+    def get_filters(self, layer):
+        # This function will return the filters in the current layer.
+        # layer_names = [l['name'] for l in self.layers]
+        # if self.show_filters not in layer_names:
+            # raise ShowNetError("Layer with name '%s' not defined by given convnet." % self.show_filters)
+        # layer = self.layers[layer_names.index(self.show_filters)]
+        filters = layer['weights'][self.input_idx]
+        if layer['type'] == 'fc': # Fully-connected layer
+            num_filters = layer['outputs']
+            channels = self.channels
+        elif layer['type'] in ('conv', 'local'): # Conv layer
+            num_filters = layer['filters']
+            channels = layer['filterChannels'][self.input_idx]
+            if layer['type'] == 'local':
+                filters = filters.reshape((layer['modules'], layer['filterPixels'][self.input_idx] * channels, num_filters))
+                filter_start = r.randint(0, layer['modules']-1)*num_filters # pick out some random modules
+                filters = filters.swapaxes(0,1).reshape(channels * layer['filterPixels'][self.input_idx], num_filters * layer['modules'])
+                num_filters *= layer['modules']
+        filters = filters.reshape(channels, filters.shape[0]/channels, filters.shape[1])
+        return filters
+
+    def get_expanded_filters(self, layer):
+        filters = self.get_filters(layer)
+
+        inputFilters = []
+        targetSize = 0
+        stride = 1
+        filterSize = layer['filterSize']
+        inputFilterSize = 0
+
+        # By default there is only one input.
+        inputlayer = self.layers[layer['inputs'][0]]
+
+        while self.layers[inputlayer['inputs'][0]]['type'] != 'data':
+
+            if inputlayer['type'] == 'pool':
+                stride = inputlayer['stride']
+                # Switch the input layer to the layer before the pooling layer.
+                inputlayer = self.layers[inputlayer['inputs'][0]]
+                # Expand the filter by the pooling stride
+                expanded = n.zeros(filters.shape[0], filters.shape[1]*(stride**2), filters.shape[2])
+                for i in range(expanded.shape[0]):
+                    for j in range(expanded.shape[2]):
+                        expanded[i,:,j] = scipy.ndimage.zoom(filters[i,:,j].reshape(filterSize, filterSize), stride, order=0).reshape(expanded.shape[1],1)
+                filters = expanded
+                filterSize *= stride
+
+            # Calculate the size of the filter after expanded.
+            targetSize = (filterSize - 1) * inputlayer['stride'] + inputlayer['filterSize']
+
+            # Allocate space for storing the expanded filter.
+            expandedFilter = n.zeros(inputlayer['channels'], targetSize**2, filters.shape[2])
+
+            if inputlayer['type'] != 'conv':
+                return self.get_filters(layer)
+            else:
+                inputfilters = self.get_filters(inputlayer)
+                for i in range(filters.shape[2]):
+                    for j in range(inputlayer['channels']):
+                        iexpanded = zeros(targetSize, targetSize)
+                        for k in range(inputlayer['filters']):
+                            original = filters[k, :, i].reshape(filterSize, filterSize)
+                            for p in range(filterSize):
+                                for q in range(filterSize):
+                                    iexpanded[p*inputlayer['stride']:p*inputlayer['stride']+inputlayer['filterSize'], q*inputlayer['stride']:q*inputlayer['stride']+inputlayer['filterSize']] += original[p,q]*inputfilters[j, :, k].reshape(inputlayer['filterSize'],inputlayer['filterSize'])
+                        expandedFilter[j,:,i] = iexpanded.reshape(targetSize**2, 1)
+
+            filters = expandedFilter
+            filterSize = targetSize
+            inputlayer = self.layers[inputlayer['inputs'][0]]
+
     def plot_predictions(self):
         data = self.get_next_batch(train=False)[2] # get a test batch
         num_classes = self.test_data_provider.get_num_classes()

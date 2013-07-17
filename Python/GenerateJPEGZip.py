@@ -125,7 +125,8 @@ if __name__ == "__main__":
     ID2Label = open(os.path.join(datadir, 'ID2Label'))
     id2label = {}
     for line in ID2Label:
-        id2label[line[:1]]=line[2:].replace('\r\n','')
+        (foldername, labelname) = line.split('|')
+        id2label[foldername.strip()]=labelname.strip().replace('\r\n','')
 
     # process imagenet
     labelnum = int(sys.argv[6])

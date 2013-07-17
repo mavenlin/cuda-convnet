@@ -14,7 +14,7 @@ void GroupSparsityInLabelCostLayer::fpropActs(int inpIdx, float scaleTargets, PA
 	if (inpIdx == 0) {
         NVMatrix& labels = *_inputs[0]; // labels as the first input
         NVMatrix& acts = *_inputs[1];   // activations from the previous layer as the second output
-        int numCases = labels.getNumElements(); 
+        int numCases = labels.getNumElements();
         
 		values.clear();
 		counts.clear();
@@ -23,6 +23,7 @@ void GroupSparsityInLabelCostLayer::fpropActs(int inpIdx, float scaleTargets, PA
 		sqrts.resize(_channels, values.size());   // Allocate the matrix for summation calculation. The number of rows is equal to the number of channels. 
                                                   // The number of cols is equal to the number of distinct labels.
 		sqrts.apply(NVMatrixOps::Zero());
+
 		// calculate the cost
 		float cost = CalculateSqrtSumSquareMatrix(labels, acts, values, counts, sqrts, _channels, acts.getNumRows()/_channels);
 		_costv.clear();
