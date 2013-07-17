@@ -56,7 +56,7 @@ __global__ void CalculateSqrtSumSquare(float * labels, float * acts, float * val
 	__shared__ float shLabel[B_X];
 	__shared__ float partial[B_Y][B_X];
 	partial[threadIdx.y][threadIdx.x] = 0;
-	if (threadIdx.y == 0)
+	if (threadIdx.y == 0 && threadIdx.x+blockIdx.x*B_X < numCases)
 		shLabel[threadIdx.x] = labels[threadIdx.x + blockIdx.x * B_X];
 	__syncthreads();
 
@@ -72,27 +72,33 @@ __global__ void CalculateSqrtSumSquare(float * labels, float * acts, float * val
 
 	#pragma unroll
 	for (int i=0; i<imagePixels; i+=PixelsPerThread) {
-		if (blkIdxInChannel * B_Y * PixelsPerThread + threadIdx.y + i < imagePixels)
+		if (blkIdxInChannel * B_Y * PixelsPerThread + threadIdx.y + i < imagePixels && threadIdx.x + blockIdx.x * B_X < numCases) {
 			partial[threadIdx.y][threadIdx.x] += acts[i*numCases] * acts[i*numCases];
+			// printf("%d %d %f\n",threadIdx.y,threadIdx.x, partial[threadIdx.y][threadIdx.x]);
+		}
 	}
 	__syncthreads();
 
 	// Since now the data are all in the shared memory, we don't need to consider the coalesced operation on the memory.
 	int tidx = threadIdx.y * B_X + threadIdx.x;
-	int numRounds = DIVUP(numLabels, B_X * B_Y);
 	for (int i=0; i<numLabels; i+=B_X*B_Y)
 		if (i+tidx<numLabels)
 			hist[i+tidx] = 0;
 
 	for (int i=0; i<numLabels; i+=B_X*B_Y) {
-		#pragma unroll
-		for (int j=0; j<B_X; j++) {
-			if (i + tidx < numLabels && shLabel[j] == values[i+tidx])
-				#pragma unroll
-				for (int k=0; k<B_Y; k++)
-					hist[i+tidx] += partial[k][j];
+		if (i + tidx < numLabels){
+			#pragma unroll
+			for (int j=0; j<B_X; j++) {
+				if (shLabel[j] == values[i+tidx]) {
+					#pragma unroll
+					for (int k=0; k<B_Y; k++){
+						hist[i+tidx] += partial[k][j];
+					}
+				}
+			}
+			hist[i+tidx] *= counts[i+tidx];
+			// printf("%d %f\n", tidx+i, hist[i+tidx]);
 		}
-		hist[i+tidx] *= counts[i+tidx];
 	}
 	__syncthreads();
 
@@ -129,7 +135,7 @@ float CalculateSqrtSumSquareMatrix(NVMatrix& labels, NVMatrix& acts, thrust::dev
 	int numBlocksPerChannel = DIVUP(imagePixels, B_Y * PixelsPerThread);
 	int numBlocksX = DIVUP(numCases, B_X);
 	
-	NVMatrix temp(numBlocksX*numBlocksPerChannel*channels, numLabels);
+	NVMatrix temp(numBlocksX*numBlocksPerChannel*channels, counts.size());
 
 	dim3 blocks(gridxdim, gridydim); // The dimension of the grid
 	dim3 threads(B_X, B_Y);            // The dimension of the block, 32 x 16 = 512, which is the thread number available inside a block for compute compatibility<2.0.
