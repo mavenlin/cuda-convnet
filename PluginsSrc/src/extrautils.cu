@@ -65,9 +65,9 @@ __global__ void CalculateSqrtSumSquare(float * labels, float * acts, float * val
 	int channelIndex = blockIdx.y / numBlocksPerChannel;
 	int numBlocksX = DIVUP(numCases, B_X);
 
-	acts += threadIdx.x + blockIdx.x * B_X \             // offset by cases
-			threadIdx.y * numCases + \                   // offset by thread in one block
-			channelIdx * imagePixels * numCases + \      // offset by channel
+	acts += threadIdx.x + blockIdx.x * B_X +            // offset by cases
+			threadIdx.y * numCases +               // offset by thread in one block
+			channelIndex * imagePixels * numCases +      // offset by channel
 			blkIdxInChannel * B_Y * PixelsPerThread * numCases;     //offset by block inside of channel
 
 	#pragma unroll
@@ -96,7 +96,7 @@ __global__ void CalculateSqrtSumSquare(float * labels, float * acts, float * val
 	}
 	__syncthreads();
 
-	float * tmp = temp + (channelIdx * numBlocksPerChannel * numBlocksX + blkIdxInChannel * numBlocksX + blockIdx.x) * numLabels;
+	float * tmp = temp + (channelIndex * numBlocksPerChannel * numBlocksX + blkIdxInChannel * numBlocksX + blockIdx.x) * numLabels;
 	for (int i=0; i<numLabels; i+=B_X*B_Y)
 		if (tidx+i<numLabels)
 			tmp[tidx+i] = hist[tidx+i];
@@ -183,7 +183,6 @@ void CalculateGradient(NVMatrix& acts, NVMatrix& labels, NVMatrix& sqrts, thrust
 {
 	int B_X = 32;
 	int B_Y = 8;
-	int numCases = acts.getNumCols();
 	int PixelsPerThread = 16;
 	int gridydim = channels * DIVUP(imagePixels, B_Y*PixelsPerThread);
 	int gridxdim = DIVUP(numCases, B_X);
