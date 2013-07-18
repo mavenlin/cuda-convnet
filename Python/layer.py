@@ -1080,6 +1080,7 @@ class NormLayerParser(LayerWithInputParser):
         dic['scale'] = mcp.safe_get_float(name, 'scale')
         dic['scale'] /= dic['size'] if self.norm_type == self.CROSSMAP_RESPONSE_NORM else dic['size']**2
         dic['pow'] = mcp.safe_get_float(name, 'pow')
+        dic['k'] = mcp.safe_get_float(name, 'k')
         
     def parse(self, name, mcp, prev_layers, model):
         dic = LayerWithInputParser.parse(self, name, mcp, prev_layers, model)

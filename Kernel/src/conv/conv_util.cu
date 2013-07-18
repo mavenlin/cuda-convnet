@@ -1040,7 +1040,7 @@ __global__ void kCNorm2(float* imgs, float* meanDiffs, float* denoms, float* tar
 template<int B_Y, int B_X, int imgsPerThread, bool checkCaseBounds, bool blocked>
 __global__ void kFCNorm(float* imgs, float* meanDiffs, float* denoms, float* target, const int imgSize,
                                   const int numFilters, const int numImages, const int sizeF, 
-                                  const float addScale, const float powScale) {
+                                  const float addScale, const float powScale, const float k) {
     const int imgPixels = imgSize * imgSize;
     const int numImgBlocks = DIVUP(numImages, B_X*imgsPerThread);
     const int numFilterBlocks = numFilters/B_Y;
@@ -1083,7 +1083,7 @@ __global__ void kFCNorm(float* imgs, float* meanDiffs, float* denoms, float* tar
     #pragma unroll
     for (int i = 0; i < imgsPerThread; i++) {
         if (!checkCaseBounds || imgIdx + i * B_X < numImages) {
-            prod[i] = 1 + addScale * prod[i];
+            prod[i] = k + addScale * prod[i]; // TODO: Modify here to satisfy adjusting k
             denoms[i * B_X] = prod[i];
             target[i * B_X] = imgs[i * B_X] * __powf(prod[i], -powScale);
         }
@@ -2743,7 +2743,7 @@ void convTICA(NVMatrix& images, NVMatrix& target, int numFilters, int sizeX, flo
  * just response normalization.
  */
 void convContrastNormCrossMap(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& denoms, NVMatrix& target,
-                             int numFilters, int sizeF, float addScale, float powScale, bool blocked) {
+                             int numFilters, int sizeF, float addScale, float powScale, bool blocked, float k) {
     int numImages = images.getNumCols();
     int imgPixels = images.getNumRows() / numFilters;
     assert(images.getNumRows() == numFilters * imgPixels);
@@ -2770,21 +2770,21 @@ void convContrastNormCrossMap(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& d
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, true, true>, cudaFuncCachePreferL1);
             kFCNorm<4, 32, 4, true, true><<<blocks, threads>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
-                                                                imgSize, numFilters, numImages, sizeF, addScale, powScale);
+                                                                imgSize, numFilters, numImages, sizeF, addScale, powScale, k);
         } else {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, false, true>, cudaFuncCachePreferL1);
             kFCNorm<4, 32, 4, false, true><<<blocks, threads>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
-                                                                imgSize, numFilters, numImages, sizeF, addScale, powScale);
+                                                                imgSize, numFilters, numImages, sizeF, addScale, powScale, k);
         }
     } else {
     if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, true, false>, cudaFuncCachePreferL1);
             kFCNorm<4, 32, 4, true, false><<<blocks, threads>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
-                                                                imgSize, numFilters, numImages, sizeF, addScale, powScale);
+                                                                imgSize, numFilters, numImages, sizeF, addScale, powScale, k);
         } else {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, false, false>, cudaFuncCachePreferL1);
             kFCNorm<4, 32, 4, false, false><<<blocks, threads>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
-                                                                imgSize, numFilters, numImages, sizeF, addScale, powScale);
+                                                                imgSize, numFilters, numImages, sizeF, addScale, powScale, k);
         }
     }
 
@@ -2891,6 +2891,6 @@ void convResponseNormCrossMapUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix
     cutilCheckMsg("convResponseNormCrossMapUndo: kernel execution failed");
 }
 
-void convResponseNormCrossMap(NVMatrix& images, NVMatrix& denoms, NVMatrix& target, int numFilters, int sizeF, float addScale, float powScale, bool blocked) {
-    convContrastNormCrossMap(images, images, denoms, target, numFilters, sizeF, addScale, powScale, blocked);
+void convResponseNormCrossMap(NVMatrix& images, NVMatrix& denoms, NVMatrix& target, int numFilters, int sizeF, float addScale, float powScale, bool blocked, float k) {
+    convContrastNormCrossMap(images, images, denoms, target, numFilters, sizeF, addScale, powScale, blocked, k);
 }

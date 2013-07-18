@@ -38,7 +38,7 @@ void GroupSparsityInLabelCostLayer::bpropActs(NVMatrix& v, int inpIdx, float sca
 }
 
 // public 
-GroupSparsityInLabelCostLayer::GroupSparsityInLabelCostLayer(ConvNet* convNet, PyObject* paramsDict) : CostLayer(convNet, paramsDict, false){
+GroupSparsityInLabelCostLayer::GroupSparsityInLabelCostLayer(ConvNet* convNet, PyObject* paramsDict) : CostLayer(convNet, paramsDict, false) {
 
 	// Initialize variables from python
 	_channels = pyDictGetInt(paramsDict, "channels");

@@ -155,6 +155,8 @@ void Layer::bprop(NVMatrix& v, PASS_TYPE passType) {
 					// After back prop, these are useless, thus is truncated to reduce memory usage.
     
 	// Propergate the backprop to the previous layers.
+    // If the previous layers havn't received enough backprop, this will do nothing.
+    // only the last layer that backprop to the previous layer will have effect.
     if (isGradProducer()) {
         for (int i = 0; i < _prev.size(); i++) {
             if (_prev[i]->isGradConsumer()) {
@@ -899,10 +901,11 @@ void ResponseNormLayer::truncBwdActs() {
  */
 CrossMapResponseNormLayer::CrossMapResponseNormLayer(ConvNet* convNet, PyObject* paramsDict) : ResponseNormLayer(convNet, paramsDict) {
     _blocked = pyDictGetInt(paramsDict, "blocked");
+    _k = pyDictGetFloat(paramsDict, "k");
 }
 
 void CrossMapResponseNormLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
-    convResponseNormCrossMap(*_inputs[0], _denoms, getActs(), _channels, _size, _scale, _pow, _blocked);
+    convResponseNormCrossMap(*_inputs[0], _denoms, getActs(), _channels, _size, _scale, _pow, _blocked, _k);
 }
 
 void CrossMapResponseNormLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {

@@ -32,7 +32,7 @@ def get256x256Image(imagename):
 
 		margin = int((newwidth-256)/2)
 		newwidth = int(newwidth)
-		im = im.resize((int(newwidth),256),Image.ANTIALIAS)			
+		im = im.resize((int(newwidth),256),Image.ANTIALIAS)	
 		
 		# Crop Image to 256 x 256
 		return im.crop((margin, 0, newwidth-margin, 256))

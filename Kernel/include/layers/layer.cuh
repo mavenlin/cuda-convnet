@@ -326,6 +326,7 @@ public:
 class CrossMapResponseNormLayer : public ResponseNormLayer {
 protected:
     bool _blocked;
+    float _k;
     void fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType);
     void bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType);
 public:

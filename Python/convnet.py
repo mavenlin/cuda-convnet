@@ -151,8 +151,8 @@ class ConvNet(IGPUModel):
                     print "%sLayer '%s' weights: %e [%e]" % (NL, l['name'], n.mean(n.abs(l['weights'])), n.mean(n.abs(l['weightsInc']))),
                 elif type(l['weights']) == list:
                     print ""
-                    print NL.join("Layer '%s' weights[%d]: %e [%e]" % (l['name'], i, n.mean(n.abs(w)), n.mean(n.abs(wi))) for i,(w,wi) in enumerate(zip(l['weights'],l['weightsInc']))),
-                print "%sLayer '%s' biases: %e [%e]" % (NL, l['name'], n.mean(n.abs(l['biases'])), n.mean(n.abs(l['biasesInc']))),
+                    print NL.join("Layer '%s' weights[%d]: %e [mean %e] [max %e] [min %e]" % (l['name'], i, n.mean(n.abs(w)), n.mean(n.abs(wi)), n.max(n.abs(wi)), n.min(n.abs(wi))) for i,(w,wi) in enumerate(zip(l['weights'],l['weightsInc']))),
+                print "%sLayer '%s' biases: %e [mean %e] [max %e] [min %e]" % (NL, l['name'], n.mean(n.abs(l['biases'])), n.mean(n.abs(l['biasesInc'])), n.max(n.abs(l['biasesInc'])), n.min(n.abs(l['biasesInc']))),
         print ""
         
     def conditional_save(self):
@@ -193,7 +193,7 @@ class ConvNet(IGPUModel):
         DataProvider.register_data_provider('dummy-cn-n', 'Dummy ConvNet', DummyConvNetDataProvider)
         DataProvider.register_data_provider('cifar-cropped', 'Cropped CIFAR', CroppedCIFARDataProvider)
         DataProvider.register_data_provider('cropped-jpeg', 'Cropped JPEG', CroppedJPEGDataProvider)
-        DataProvider.register_data_provider('jpeg', 'Cropped JPEG', JPEGDataProvider)
+        DataProvider.register_data_provider('jpeg', 'JPEG', JPEGDataProvider)
         
         return op
     

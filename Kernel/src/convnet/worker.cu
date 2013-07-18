@@ -97,7 +97,7 @@ void TrainingWorker::run() {
             _convNet->updateWeights();
         }
     }
-    cudaThreadSynchronize();
+    cudaThreadSynchronize(); // Blocks until all the deivice finish the job.
     _convNet->getResultQueue().enqueue(new WorkResult(WorkResult::BATCH_DONE, batchCost));
 }
 

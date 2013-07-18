@@ -102,6 +102,47 @@ public:
 };
 
 
+/************************************
+ * KL Divergence neuron Use together with SumCostLayer for KL divergence penalty
+ ************************************/
+class KLNeuron : public Neuron {
+protected:
+    float _p;
+    virtual void _activate(PASS_TYPE passType) { // act = w*log(w/p)-w+p
+        
+    }
 
+    virtual void _computeInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passType) {
+
+    }
+    
+    virtual void _addInputGrad(NVMatrix& actsGrad, NVMatrix& target, PASS_TYPE passType) {
+        
+    }
+};
+
+/************************************
+ * L1 neuron
+ ************************************/
+
+
+
+/************************************
+ * Sum Cost
+ ************************************/
+class SumCostLayer : public CostLayer {
+protected:
+    void fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
+        _costv.clear();
+        _costv.push_back(_inputs[0].sum());
+    }
+    void bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {
+        _prev[inpIdx]->getActsGrad().scale(scaleTargets);
+        _prev[inpIdx]->getActsGrad().addScalar(-_coeff*1); // The gradient is always 1
+    }
+public:
+    SumCostLayer(ConvNet* convNet, PyObject* paramsDict) : CostLayer(convNet, paramsDict, false) {
+    }
+};
 
 #endif

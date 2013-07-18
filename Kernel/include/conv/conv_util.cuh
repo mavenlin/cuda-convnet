@@ -62,11 +62,11 @@ void normalizeLocalWeights(NVMatrix& weights, int numModules, float norm);
 void convTICAGrad(NVMatrix& images, NVMatrix& ticas, NVMatrix& target, int numFilters, int sizeX, float scaleTarget, float scaleOutput);
 void convTICA(NVMatrix& images, NVMatrix& target, int numFilters, int sizeX, float scaleTarget, float scaleOutput);
 void convContrastNormCrossMap(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& denoms, NVMatrix& target,
-                             int numFilters, int sizeF, float addScale, float powScale, bool blocked);
+                             int numFilters, int sizeF, float addScale, float powScale, bool blocked, float k);
 void convResponseNormCrossMapUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& inputs, NVMatrix& acts, NVMatrix& target, int numFilters,
                          int sizeF, float addScale, float powScale, bool blocked, float scaleTargets, float scaleOutput);
 void convResponseNormCrossMap(NVMatrix& images, NVMatrix& denoms, NVMatrix& target, int numFilters, int sizeF, float addScale,
-                              float powScale, bool blocked);
+                              float powScale, bool blocked, float k);
 
 class AvgPooler {
 public:
