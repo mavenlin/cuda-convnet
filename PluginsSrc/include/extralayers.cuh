@@ -134,7 +134,7 @@ class SumCostLayer : public CostLayer {
 protected:
     void fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
         _costv.clear();
-        _costv.push_back(_inputs[0].sum());
+        _costv.push_back(_inputs[0]->sum());
     }
     void bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {
         _prev[inpIdx]->getActsGrad().scale(scaleTargets);

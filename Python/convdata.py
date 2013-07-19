@@ -175,10 +175,10 @@ class CroppedJPEGDataProvider(JPEGDataProvider):
 
         cropped = self.cropped_data[self.batches_generated % 2]
 
-        if datadic['data'].shape[1] != self.batch_meta['batch_size']:
-            cropped = cropped[:, :datadic['data'].shape[1]]
+        if datadic[0].shape[1] != self.batch_meta['batch_size']:
+            cropped = cropped[:, :datadic[0].shape[1]]
 
-        self.__trim_borders(datadic['data'], cropped)
+        self.__trim_borders(datadic[0], cropped)
         
         # demean
         cropped -= self.data_mean
@@ -190,9 +190,9 @@ class CroppedJPEGDataProvider(JPEGDataProvider):
         # cropped /= (casemax - casemin)
 
         self.batches_generated += 1
-        datadic['labels'] = n.require(datadic['labels'], dtype=n.float32)
-        datadic['labels'] = n.require(n.tile(datadic['labels'].reshape((1, cropped.shape[1])), (1, self.data_mult)), dtype=n.float32, requirements='C')
-        return epoch, batchnum, [cropped, datadic['labels']]
+        datadic[1] = n.require(datadic[1], dtype=n.float32)
+        datadic[1] = n.require(n.tile(datadic[1].reshape((1, cropped.shape[1])), (1, self.data_mult)), dtype=n.float32, requirements='C')
+        return epoch, batchnum, [cropped, datadic[1]]
         
     def get_data_dims(self, idx=0):
         return self.inner_size**2 * self.num_colors if idx == 0 else 1

@@ -186,6 +186,17 @@ class JPEGDataProvider(DataProvider):
     def get_num_classes(self):
         return len(self.batch_meta['label_names'])
 
+    def get_data_dims(self, idx=0):
+        return self.batch_meta['num_vis'] if idx == 0 else 1
+
+    def get_next_batch(self):
+        if self.data_dic is None or len(self.batch_range) > 1:
+            self.data_dic = self.get_batch(self.curr_batchnum)
+        epoch, batchnum = self.curr_epoch, self.curr_batchnum
+        self.advance_batch()
+
+        return epoch, batchnum, [self.data_dic['data'], self.data_dic['labels']]
+
 
 class DummyDataProvider(DataProvider):
     def __init__(self, data_dim):
