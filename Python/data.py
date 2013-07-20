@@ -194,7 +194,7 @@ class JPEGDataProvider(DataProvider):
             self.data_dic = self.get_batch(self.curr_batchnum)
         epoch, batchnum = self.curr_epoch, self.curr_batchnum
         self.advance_batch()
-        self.data_dic['labels'] = n.require(self.data_dic['labels'], dtype=n.float32)
+        self.data_dic['labels'] = n.require(self.data_dic['labels'], dtype=n.float32).reshape(1, len(self.data_dic['labels']))
         return epoch, batchnum, [self.data_dic['data'], self.data_dic['labels']]
 
 
