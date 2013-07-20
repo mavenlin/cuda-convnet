@@ -194,6 +194,10 @@ class ConvNet(IGPUModel):
         DataProvider.register_data_provider('cifar-cropped', 'Cropped CIFAR', CroppedCIFARDataProvider)
         DataProvider.register_data_provider('cropped-jpeg', 'Cropped JPEG', CroppedJPEGDataProvider)
         DataProvider.register_data_provider('jpeg', 'JPEG', JPEGDataProvider)
+        DataProvider.register_data_provider('njpeg', 'Normalized JPEG', NJPEGDataProvider)
+        DataProvider.register_data_provider('dmjpeg', 'Demean JPEG', DMJPEGDataProvider)
+        DataProvider.register_data_provider('ncroppedjpeg', 'Normalized Cropped JPEG', NCroppedJPEGDataProvider)
+        DataProvider.register_data_provider('dmcroppedjpeg', 'Demean Cropped JPEG', DMCroppedJPEGDataProvider)
         
         return op
     

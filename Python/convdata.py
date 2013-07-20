@@ -181,7 +181,7 @@ class CroppedJPEGDataProvider(JPEGDataProvider):
         self.__trim_borders(datadic[0], cropped)
         
         # demean
-        cropped -= self.data_mean
+        # cropped -= self.data_mean
         
         # normalize to 0 - 1
         # casemin = n.amin(cropped, axis=0)
@@ -228,3 +228,36 @@ class CroppedJPEGDataProvider(JPEGDataProvider):
                 if nr.randint(2) == 0: # also flip the image with 50% probability
                     pic = pic[:,:,::-1]
                 target[:,c] = pic.reshape((self.get_data_dims(),))
+
+
+class NCroppedJPEGDataProvider(CroppedJPEGDataProvider):
+    def get_next_batch(self):
+        epoch, batchnum, datadic = CroppedJPEGDataProvider.get_next_batch()
+        casemin = n.amin(datadic[0], axis=0)
+        casemax = n.amax(datadic[0], axis=0)
+        datadic[0] -= casemin
+        datadic[0] /= (casemax - casemin)
+        return epoch, batchnum, datadic
+
+
+class DMCroppedJPEGDataProvider(CroppedJPEGDataProvider):
+    def get_next_batch(self):
+        epoch, batchnum, datadic = CroppedJPEGDataProvider.get_next_batch()
+        datadic[0] -= self.data_mean
+        return epoch, batchnum, datadic
+
+
+class NJPEGDataProvider(JPEGDataProvider):
+    def get_next_batch(self):
+        epoch, batchnum, datadic = JPEGDataProvider.get_next_batch()
+        casemin = n.amin(datadic[0], axis=0)
+        casemax = n.amax(datadic[0], axis=0)
+        datadic[0] -= casemin
+        datadic[0] /= (casemax - casemin)
+        return epoch, batchnum, datadic
+
+class DMJPEGDataProvider(JPEGDataProvider):
+    def get_next_batch(self):
+        epoch, batchnum, datadic = JPEGDataProvider.get_next_batch()
+        datadic[0] -= self.batch_meta['data_mean']
+        return epoch, batchnum, datadic
