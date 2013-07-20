@@ -278,24 +278,14 @@ dp_types = {"default": "The default data provider; loads one batch into memory a
             "labeled-memory": "Combination labeled + memory",
             "dummy-n": "Dummy data provider for n-dimensional data",
             "dummy-labeled-n": "Labeled dummy data provider for n-dimensional data",
-            "cropped-jpeg": "zipped jpeg files with croption",
-            "jpeg": "zipped jpeg data",
-            "njpeg": "jpeg normalized to 0 to 1",
-            "dmjpeg": "demean jpeg",
-            "ncroppedjpeg": "cropped-jpeg normalized to 0 to 1",
-            "dmcroppedjpeg": "demean cropped-jpeg"}
+            "jpeg": "zipped jpeg data"}
 dp_classes = {"default": DataProvider,
               "memory": MemoryDataProvider,
               "labeled": LabeledDataProvider,
               "labeled-memory": LabeledMemoryDataProvider,
               "dummy-n": DummyDataProvider,
               "dummy-labeled-n": LabeledDummyDataProvider,
-              "cropped-jpeg": CroppedJPEGDataProvider,
-              "jpeg": JPEGDataProvider,
-              "njpeg": NJPEGDataProvider,
-              "dmjpeg": DMJPEGDataProvider,
-              "ncroppedjpeg": NCroppedJPEGDataProvider,
-              "dmcroppedjpeg": DMCroppedJPEGDataProvider}
+              "jpeg": JPEGDataProvider}
     
 class DataProviderException(Exception):
     pass
