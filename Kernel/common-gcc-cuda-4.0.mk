@@ -329,7 +329,7 @@ ifneq ($(STATIC_LIB),)
 	LINKLINE  = ar rucv $(TARGET) $(OBJS)
 else
 	ifneq ($(OMIT_CUTIL_LIB),1)
-		LIB += -lcutil_$(LIB_ARCH)$(LIBSUFFIX) -lshrutil_$(LIB_ARCH)$(LIBSUFFIX)
+		# LIB += -lcutil_$(LIB_ARCH)$(LIBSUFFIX) -lshrutil_$(LIB_ARCH)$(LIBSUFFIX) # comment this out to remove the dependency on the cutil library, which is deprecated in cuda 5.0
 	endif
 	# Device emulation configuration
 	ifeq ($(emu), 1)

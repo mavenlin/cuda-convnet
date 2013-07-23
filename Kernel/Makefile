@@ -1,6 +1,6 @@
 MODELNAME := libkernel
 
-INCLUDES :=  -I$(PYTHON_INCLUDE_PATH) -I$(NUMPY_INCLUDE_PATH) -I./include/data -I./include/layers -I./include/matrix -I./include/conv -I./include/nvmatrix -I./include/convnet -I$(INTEL_MKL_PATH)/include
+INCLUDES :=  -I$(PYTHON_INCLUDE_PATH) -I$(NUMPY_INCLUDE_PATH) -I./include/data -I./include/layers -I./include/matrix -I./include/conv -I./include/nvmatrix -I./include/convnet -I$(INTEL_MKL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 LIB := -lpthread -L$(CUDA_INSTALL_PATH)/lib64 -L$(INTEL_MKL_PATH)/lib/intel64 -lmkl_rt -ldl
 
 USECUBLAS   := 1

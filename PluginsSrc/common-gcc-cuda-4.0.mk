@@ -329,7 +329,7 @@ ifneq ($(STATIC_LIB),)
 	LINKLINE  = ar rucv $(TARGET) $(OBJS)
 else
 	ifneq ($(OMIT_CUTIL_LIB),1)
-		LIB += -lcutil_$(LIB_ARCH)$(LIBSUFFIX) -lshrutil_$(LIB_ARCH)$(LIBSUFFIX)
+		# LIB += -lcutil_$(LIB_ARCH)$(LIBSUFFIX) -lshrutil_$(LIB_ARCH)$(LIBSUFFIX)
 	endif
 	# Device emulation configuration
 	ifeq ($(emu), 1)

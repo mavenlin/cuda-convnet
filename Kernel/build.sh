@@ -14,27 +14,27 @@
 # (it'll almost certainly be under /usr)
 
 # CUDA toolkit installation directory.
-export CUDA_INSTALL_PATH=/usr/local/cuda
+export CUDA_INSTALL_PATH=/usr/local/cuda-5.0
 
 # CUDA SDK installation directory.
-export CUDA_SDK_PATH=/home/svu/a0089298/NVIDIA_GPU_Computing_SDK
+export CUDA_SDK_PATH=/home/linmin/NVIDIA_CUDA-5.0_Samples
 
 # Python include directory. This should contain the file Python.h, among others.
-export PYTHON_INCLUDE_PATH=/home/svu/a0089298/usr/local/include/python2.7
+export PYTHON_INCLUDE_PATH=/usr/include/python2.7
 
 # Python library path
-export PYTHON_LIB_PATH=/home/svu/a0089298/usr/local/lib
+export PYTHON_LIB_PATH=/usr/lib
 
 # Python binary path
-export PYTHON_BIN_PATH=/home/svu/a0089298/usr/local/bin
+export PYTHON_BIN_PATH=/usr/bin
 
 # Numpy include directory. This should contain the file arrayobject.h, among others.
-export NUMPY_INCLUDE_PATH=/home/svu/a0089298/usr/local/lib/python2.7/site-packages/numpy/core/include/numpy
+export NUMPY_INCLUDE_PATH=/usr/local/lib/python2.7/dist-packages/numpy/core/include/numpy
 
 # ATLAS library directory. This should contain the file libcblas.so, among others.
 # export ATLAS_LIB_PATH=/usr/lib/atlas-base
 
-export INTEL_MKL_PATH=/home/svu/a0089298/intel/mkl
+export INTEL_MKL_PATH=/opt/intel/mkl
 
 make -j 4 $*
 
