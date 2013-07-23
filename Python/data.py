@@ -277,15 +277,13 @@ dp_types = {"default": "The default data provider; loads one batch into memory a
             "labeled": "Returns data and labels (used by classifiers)",
             "labeled-memory": "Combination labeled + memory",
             "dummy-n": "Dummy data provider for n-dimensional data",
-            "dummy-labeled-n": "Labeled dummy data provider for n-dimensional data",
-            "jpeg": "zipped jpeg data"}
+            "dummy-labeled-n": "Labeled dummy data provider for n-dimensional data"}
 dp_classes = {"default": DataProvider,
               "memory": MemoryDataProvider,
               "labeled": LabeledDataProvider,
               "labeled-memory": LabeledMemoryDataProvider,
               "dummy-n": DummyDataProvider,
-              "dummy-labeled-n": LabeledDummyDataProvider,
-              "jpeg": JPEGDataProvider}
+              "dummy-labeled-n": LabeledDummyDataProvider}
     
 class DataProviderException(Exception):
     pass

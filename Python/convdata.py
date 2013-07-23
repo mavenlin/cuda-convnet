@@ -232,7 +232,7 @@ class CroppedJPEGDataProvider(JPEGDataProvider):
 
 class NCroppedJPEGDataProvider(CroppedJPEGDataProvider):
     def get_next_batch(self):
-        epoch, batchnum, datadic = CroppedJPEGDataProvider.get_next_batch()
+        epoch, batchnum, datadic = CroppedJPEGDataProvider.get_next_batch(self)
         casemin = n.amin(datadic[0], axis=0)
         casemax = n.amax(datadic[0], axis=0)
         datadic[0] -= casemin
@@ -242,14 +242,14 @@ class NCroppedJPEGDataProvider(CroppedJPEGDataProvider):
 
 class DMCroppedJPEGDataProvider(CroppedJPEGDataProvider):
     def get_next_batch(self):
-        epoch, batchnum, datadic = CroppedJPEGDataProvider.get_next_batch()
+        epoch, batchnum, datadic = CroppedJPEGDataProvider.get_next_batch(self)
         datadic[0] -= self.data_mean
         return epoch, batchnum, datadic
 
 
 class NJPEGDataProvider(JPEGDataProvider):
     def get_next_batch(self):
-        epoch, batchnum, datadic = JPEGDataProvider.get_next_batch()
+        epoch, batchnum, datadic = JPEGDataProvider.get_next_batch(self)
         casemin = n.amin(datadic[0], axis=0)
         casemax = n.amax(datadic[0], axis=0)
         datadic[0] -= casemin
@@ -258,6 +258,6 @@ class NJPEGDataProvider(JPEGDataProvider):
 
 class DMJPEGDataProvider(JPEGDataProvider):
     def get_next_batch(self):
-        epoch, batchnum, datadic = JPEGDataProvider.get_next_batch()
+        epoch, batchnum, datadic = JPEGDataProvider.get_next_batch(self)
         datadic[0] -= self.batch_meta['data_mean']
         return epoch, batchnum, datadic
