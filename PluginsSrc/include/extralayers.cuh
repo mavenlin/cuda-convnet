@@ -145,4 +145,35 @@ public:
     }
 };
 
+/****************************************
+ * Weight abs sum
+ ****************************************/
+// This layer does not use the activation of the previous layer or the activation of its own.
+// This layer does not use the activation of the previous layer, which means, this layer does not use the input. Because, indeed this layer uses the previous layer's weight.
+// Be careful of the addition to the previous layer's weights, because the weights are first cached and when update weights are called, it is update, thus should not add directly.
+// Also double check whether the weights are already changed in in between fprop and bprop of this layer. 
+class WeightAbsSumLayer : public CostLayer {
+protected:
+    void fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
+        assert(_prev.size() == 1); // The size of the _prev is not 1, that means there are more than one inputs to this layer, Currently it is not supported.
+        WeightLayer* prev_weight = (WeightLayer*) _prev[0]; 
+        NVMatrix& weight_matrix = prev_weight->getWeights(0)->getW();
+        weight_matrix.apply(NVMatrixOps::Abs(), getActs()); // take the abs of the weights in the previous layer, and then the next step is to sum.
+        _costv.clear();
+        _costv.push_back(getActs().sum());
+    }
+    void bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {
+        WeightLayer* prev_weight = (WeightLayer*) _prev[0];
+        NVMatrix& weight_grad = prev_weight->getWeights(0)->getGrad();
+        NVMatrix& weight_matrix = prev_weight->getWeights(0)->getW();
+        weight_matrix.eltwiseDivide(weight_grad.apply(), weight_grad);
+        // weight_grad.add();
+        // TODO: not finished yet.
+    }
+public:
+    WeightAbsSumLayer(ConvNet* convNet, PyObject* paramsDict) : CostLayer(convNet, paramsDict, false) {
+    }
+};
+
+
 #endif
