@@ -20,3 +20,20 @@ def initWFrom(name, idx, shape, params=None):
 		assert(len(weightlist) > idx)
 		assert(weightlist[idx].shape == shape)
 		return weightlist[idx]
+
+
+
+def initBFrom(name, shape, params=None):
+	assert(params != None)
+	assert(len(params) > 0)
+	(checkPointFile, layerName) = params[0].split('.')
+
+	net = IGPUModel.load_checkpoint(checkPointFile)
+	layernames = [ layer['name'] for layer in net['model_state']['layers'] ]
+	if not layerName in layernames:
+		raise initWError("There is layer named '%s' in file '%s'" % (layerName, checkPointFile))
+	else:
+		weightlist = net['model_state']['layers'][layernames.index(layerName)]['biases']
+		assert(len(weightlist) > 0)
+		assert(weightlist.shape == shape)
+		return weightlist

@@ -265,11 +265,12 @@ class IGPUModel:
     
         pickle(checkpoint_file_full_path, dic,compress=self.zip_save)
         
-        for f in sorted(os.listdir(checkpoint_dir), key=alphanum_key):
-            if sum(os.path.getsize(os.path.join(checkpoint_dir, f2)) for f2 in os.listdir(checkpoint_dir)) > self.max_filesize_mb*1024*1024 and f != checkpoint_file:
-                os.remove(os.path.join(checkpoint_dir, f))
-            else:
-                break
+        # Now save all the check point files. Need to delete manually
+        # for f in sorted(os.listdir(checkpoint_dir), key=alphanum_key):
+            # if sum(os.path.getsize(os.path.join(checkpoint_dir, f2)) for f2 in os.listdir(checkpoint_dir)) > self.max_filesize_mb*1024*1024 and f != checkpoint_file:
+                # os.remove(os.path.join(checkpoint_dir, f))
+            # else:
+                # break
             
     @staticmethod
     def load_checkpoint(load_dir):

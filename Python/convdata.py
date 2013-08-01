@@ -261,3 +261,63 @@ class DMJPEGDataProvider(JPEGDataProvider):
         epoch, batchnum, datadic = JPEGDataProvider.get_next_batch(self)
         datadic[0] -= self.batch_meta['data_mean']
         return epoch, batchnum, datadic
+
+
+import scipy.io
+import math
+
+class MatDataProvider(DataProvider):
+    def __init__(self, data_dir, batch_range, init_epoch=1, init_batchnum=None, dp_params={}, test=False):
+        mat = scipy.io.loadmat(self.data_dir)
+        self.train      = mat['train']
+        self.test       = mat['test']
+        self.trainlabel = mat['trainlabel']
+        self.testlabel  = mat['testlabel']
+
+        self.trainnum   = self.trainlabel.size
+        self.testnum    = self.testlabel.size
+
+        self.batchsize  = 128
+        self.numtrainb  = math.ceil( float(self.trainnum) / float(128) )
+        self.numtestb   = math.ceil( float(self.testnum)  / float(128) )
+
+        if batch_range == None:
+            batch_range = range(1, self.numtestb + self.numtrainb + 1)
+        if init_batchnum is None or init_batchnum not in batch_range:
+            init_batchnum = batch_range[0]
+
+        self.data_dir = data_dir
+        self.batch_range = batch_range
+        self.curr_epoch = init_epoch
+        self.curr_batchnum = init_batchnum
+        self.dp_params = dp_params
+        self.test = test
+        self.batch_idx = batch_range.index(init_batchnum)
+
+    def get_next_batch(self):
+        if self.data_dic is None or len(self.batch_range) > 1:
+            self.data_dic = self.get_batch(self.curr_batchnum)
+
+        epoch, batchnum = self.curr_epoch, self.curr_batchnum
+        self.advance_batch()
+        return epoch, batchnum, self.data_dic
+
+
+    def get_batch(self, batch_num):
+        if batch_num <= self.numtrainb:
+            start = (batch_num - 1) * self.batchsize
+            end   = n.min((batch_num * self.batchsize, self.trainnum))
+            data = self.train[:,start:end]
+            data = n.require(data, n.float32, 'C')
+            labels = self.trainlabel[:,start:end]
+            labels = n.require(labels, n.float32, 'C').reshape(1, labels.size)
+            return [data, labels]
+        else:
+            batch_num = batchnum - self.numtrainb
+            start = (batch_num - 1) * self.batchsize
+            end   = n.min((batch_num * self.batchsize, self.testnum))
+            data = self.test[:,start:end]
+            data = n.require(data, n.float32, 'C')
+            labels = self.testlabel[:,start:end]
+            labels = n.require(labels, n.float32, 'C').reshape(1, labels.size)
+            return [data, labels]

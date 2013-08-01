@@ -157,16 +157,16 @@ protected:
     void fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
         assert(_prev.size() == 1); // The size of the _prev is not 1, that means there are more than one inputs to this layer, Currently it is not supported.
         WeightLayer* prev_weight = (WeightLayer*) _prev[0]; 
-        NVMatrix& weight_matrix = prev_weight->getWeights(0)->getW();
+        NVMatrix& weight_matrix = prev_weight->getWeights(0).getW();
         weight_matrix.apply(NVMatrixOps::Abs(), getActs()); // take the abs of the weights in the previous layer, and then the next step is to sum.
         _costv.clear();
         _costv.push_back(getActs().sum());
     }
     void bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {
         WeightLayer* prev_weight = (WeightLayer*) _prev[0];
-        NVMatrix& weight_grad = prev_weight->getWeights(0)->getGrad();
-        NVMatrix& weight_matrix = prev_weight->getWeights(0)->getW();
-        weight_matrix.eltwiseDivide(weight_grad.apply(), weight_grad);
+        NVMatrix& weight_grad = prev_weight->getWeights(0).getGrad();
+        NVMatrix& weight_matrix = prev_weight->getWeights(0).getW();
+        // weight_matrix.eltwiseDivide(weight_grad.apply(), weight_grad);
         // weight_grad.add();
         // TODO: not finished yet.
     }
