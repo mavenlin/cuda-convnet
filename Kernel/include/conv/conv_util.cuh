@@ -227,9 +227,13 @@ __global__ void kLocalPool2(float* imgs, float* target, const int imgSize, const
     __shared__ float shImgs[filtersPerThread][B_X*imgsPerThread];
     const int numImgBlocks = DIVUP(numImages,B_X*imgsPerThread);
     const int numFilterBlocks = numFilters/(filtersPerThread);
+    // The output index of the target 
     const int blockOutputX = 4*(blockIdx.x / numImgBlocks);
     const int blockOutputY = 4*(blockIdx.y / numFilterBlocks);
+
+    // x axis of block index is for indexing image.
     const int blockImgIdx = (blockIdx.x % numImgBlocks) * B_X * imgsPerThread;
+    // y axis of block index is for indexing filters.
     const int blockFilterIdx = (blockIdx.y % numFilterBlocks) * filtersPerThread;
     
 //    const int blockOutputIdx = blockOutputY * outputsX + blockOutputX;
