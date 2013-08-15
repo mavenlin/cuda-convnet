@@ -132,7 +132,24 @@ class ConvNet(IGPUModel):
             if sum(m.isnan(v) for v in costs[errname]) > 0 or sum(m.isinf(v) for v in costs[errname]):
                 print "^ got nan or inf!"
                 sys.exit(1)
-        
+    
+    def print_mean_cost(self, cost_outputs):
+        keys = cost_outputs[0][0].keys()
+        dic = {key:[] for key in keys}
+        for cost_output in cost_outputs:
+            costs, num_cases = cost_output[0], cost_output[1]
+            for errname in keys:
+                # costs[errname] = [(v/num_cases) for v in costs[errname]]
+                dic[errname] += [costs[errname]]
+
+        for key in keys:
+            dic[key] = n.array(dic[key]).mean(axis=0)
+
+        for errname in keys:
+            print "%s: " % errname,
+            print ", ".join("%6f" % v for v in dic[errname]),
+
+
     def print_train_results(self):
         self.print_costs(self.train_outputs[-1])
         

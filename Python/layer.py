@@ -1053,8 +1053,8 @@ class PoolLayerParser(LayerWithInputParser):
         self.verify_num_range(dic['outputsX'], 'outputsX', 0, None)
         self.verify_num_range(dic['channels'], 'channels', 1, None)
         
-        if LayerWithInputParser.grad_consumers_below(dic):
-            self.verify_divisible(dic['channels'], 16, 'channels')  # verifies divisible by 16
+        # if LayerWithInputParser.grad_consumers_below(dic):
+            # self.verify_divisible(dic['channels'], 16, 'channels')  # verifies divisible by 16
         self.verify_str_in(dic['pool'], ['max', 'avg'])
         
         self.verify_img_size()

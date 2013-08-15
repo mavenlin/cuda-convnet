@@ -53,7 +53,8 @@ class IGPUModel:
         self.get_gpus()
         self.fill_excused_options()
         #assert self.op.all_values_given()
-        
+        self.range_train_outputs = []
+
         for o in op.get_options_list():
             setattr(self, o.name, o.value)
 
@@ -133,6 +134,9 @@ class IGPUModel:
         print "Saving checkpoints to %s" % os.path.join(self.save_path, self.save_file)
         print "========================="
         next_data = self.get_next_batch()
+
+        self.range_train_outputs = []
+
         while self.epoch <= self.num_epochs:
             data = next_data
             self.epoch, self.batchnum = data[0], data[1]
@@ -147,11 +151,14 @@ class IGPUModel:
             
             batch_output = self.finish_batch()
             self.train_outputs += [batch_output]
+            self.range_train_outputs += [batch_output]
             self.print_train_results()
 
             if self.get_num_batches_done() % self.testing_freq == 0:
                 self.sync_with_host()
                 self.test_outputs += [self.get_test_error()]
+                self.print_mean_train_results()
+                self.range_train_outputs = []
                 self.print_test_results()
                 self.print_test_status()
                 self.conditional_save()
@@ -199,6 +206,14 @@ class IGPUModel:
             self.cleanup()
 
         print "Train error: %.6f " % (batch_error),
+
+    def print_mean_train_results(self):
+        print "\n======================Train output======================"
+        print "mean train cost: ",
+        self.print_mean_cost(self.range_train_outputs)
+
+    def print_mean_cost(self, costs):
+        pass
 
     def print_test_results(self):
         batch_error = self.test_outputs[-1][0]
