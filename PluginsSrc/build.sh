@@ -14,10 +14,10 @@
 # (it'll almost certainly be under /usr)
 
 # CUDA toolkit installation directory.
-export CUDA_INSTALL_PATH=/usr/local/cuda-5.0
+export CUDA_INSTALL_PATH=../cuda-5.0
 
 # CUDA SDK installation directory.
-export CUDA_SDK_PATH=/home/linmin/NVIDIA_CUDA-5.0_Samples
+export CUDA_SDK_PATH=../NVIDIA_CUDA-5.0_Samples
 
 # Python include directory. This should contain the file Python.h, among others.
 export PYTHON_INCLUDE_PATH=/usr/include/python2.7
@@ -34,7 +34,7 @@ export NUMPY_INCLUDE_PATH=/usr/local/lib/python2.7/dist-packages/numpy/core/incl
 # ATLAS library directory. This should contain the file libcblas.so, among others.
 # export ATLAS_LIB_PATH=/usr/lib/atlas-base
 
-export INTEL_MKL_PATH=/opt/intel/mkl
+export INTEL_MKL_PATH=../intel/mkl
 
 make -j 4 $*
 

@@ -162,6 +162,26 @@ public:
             _numUpdates = 0;
         }
     }
+
+    NVMatrix* incrementBy(NVMatrix& inc) {
+        if (_srcWeights == NULL) {
+            NVMatrix *replace = new NVMatrix();
+            _weights->add(inc, *replace);
+            NVMatrix *ret = _weights;
+            _weights = replace;
+            return ret;
+        } else {
+            return NULL;
+        }
+    }
+
+    void updateSrc() {
+        if (_srcWeights == NULL) {
+            return;
+        } else {
+            _weights = _srcWeights->_weights;
+        }
+    }
     
     int incNumUpdates() {
         if (_srcWeights != NULL) {

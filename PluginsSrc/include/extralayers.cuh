@@ -175,5 +175,18 @@ public:
     }
 };
 
+class FFCLayer : public WeightLayer {
+protected:
+    int _channels;
+    int _in_nodes;
+    int _out_nodes;
+    void fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType);
+    void bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType);
+    void bpropBiases(NVMatrix& v, PASS_TYPE passType);
+    void bpropWeights(NVMatrix& v, int inpIdx, PASS_TYPE passType);
+public:
+    FFCLayer(ConvNet* convNet, PyObject* paramsDict);
+};
+
 
 #endif

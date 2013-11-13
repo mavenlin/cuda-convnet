@@ -9,7 +9,7 @@ USE_MKL     := 1
 PYTHON_VERSION=$(shell $(PYTHON_BIN_PATH)/python -V 2>&1 | cut -d ' ' -f 2 | cut -d '.' -f 1,2)
 LIB +=  -L$(PYTHON_LIB_PATH) -lpython$(PYTHON_VERSION)
 
-GENCODE_ARCH := -gencode=arch=compute_20,code=\"sm_20,compute_20\"
+GENCODE_ARCH := -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 COMMONFLAGS := -DNUMPY_INTERFACE -DMODELNAME=$(MODELNAME) -DINITNAME=init$(MODELNAME)
 
 EXECUTABLE	:= $(MODELNAME).so
