@@ -90,6 +90,14 @@ void FFCLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
     }
     _inputs[inpIdx]->reshape(_inputs[inpIdx]->getNumElements()/(_channels*_in_nodes*pixels), (_channels*_in_nodes*pixels));
     getActs().reshape(getActs().getNumElements()/(_channels*_out_nodes*pixels), (_channels*_out_nodes*pixels));
+    /* if (passType == PASS_TEST && this->_name.compare("ffc6")==0) {
+      // Get data layer
+      Layer& datalayer = this->_convNet->getLayer(0);
+      datalayer.getActs().print(datalayer.getActs().getNumRows(), datalayer.getActs().getNumCols());
+      printf("\n\n");
+      getActs().print(getActs().getNumRows(), getActs().getNumCols());
+      exit(0);
+      } */
 }
 
 void FFCLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {

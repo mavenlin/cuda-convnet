@@ -216,7 +216,7 @@ class ConvNet(IGPUModel):
         DataProvider.register_data_provider('ncroppedjpeg', 'Normalized Cropped JPEG', NCroppedJPEGDataProvider)
         DataProvider.register_data_provider('dmcroppedjpeg', 'Demean Cropped JPEG', DMCroppedJPEGDataProvider)
         DataProvider.register_data_provider('mat', 'Matlab mat data provider', MatDataProvider)
-        
+        DataProvider.register_data_provider('mnist', 'MNIST data provider', MnistDataProvider)        
         return op
     
 if __name__ == "__main__":
