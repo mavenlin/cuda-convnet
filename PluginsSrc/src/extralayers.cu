@@ -8,19 +8,19 @@
 
 // protected
 void GroupSparsityInLabelCostLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType){
-	// there is no need to worry about sharing. 
+	// there is no need to worry about sharing.
 	// They are already handled in Layer's fprop function and the python script will judge whether the input is fed to multiple layers.
 	// the cost is only calculated once, do it when inpidx is 0
 	if (inpIdx == 0) {
         NVMatrix& labels = *_inputs[0]; // labels as the first input
         NVMatrix& acts = *_inputs[1];   // activations from the previous layer as the second output
         int numCases = labels.getNumElements();
-        
+
 		values.clear();
 		counts.clear();
 		sparse_histogram(labels.getDevData(), numCases, values, counts);
-		
-		sqrts.resize(_channels, values.size());   // Allocate the matrix for summation calculation. The number of rows is equal to the number of channels. 
+
+		sqrts.resize(_channels, values.size());   // Allocate the matrix for summation calculation. The number of rows is equal to the number of channels.
                                                   // The number of cols is equal to the number of distinct labels.
 		sqrts.apply(NVMatrixOps::Zero());
 
@@ -37,7 +37,7 @@ void GroupSparsityInLabelCostLayer::bpropActs(NVMatrix& v, int inpIdx, float sca
 	_prev[inpIdx]->getActsGrad().add(target, scaleTargets, -_coeff);
 }
 
-// public 
+// public
 GroupSparsityInLabelCostLayer::GroupSparsityInLabelCostLayer(ConvNet* convNet, PyObject* paramsDict) : CostLayer(convNet, paramsDict, false) {
 
 	// Initialize variables from python
@@ -50,12 +50,12 @@ GroupSparsityInLabelCostLayer::GroupSparsityInLabelCostLayer(ConvNet* convNet, P
 
 
 
-/* 
+/*
  * =======================
- * FFCLayer Filter Fully Connected
+ * CCCPLayer Filter Fully Connected
  * =======================
  */
-FFCLayer::FFCLayer(ConvNet* convNet, PyObject* paramsDict) : WeightLayer(convNet, paramsDict, true, false) {
+CCCPLayer::CCCPLayer(ConvNet* convNet, PyObject* paramsDict) : WeightLayer(convNet, paramsDict, true, false) {
     _wStep = 0.1;
     _bStep = 0.01;
     _channels = pyDictGetInt(paramsDict, "channels");
@@ -63,7 +63,7 @@ FFCLayer::FFCLayer(ConvNet* convNet, PyObject* paramsDict) : WeightLayer(convNet
     _out_nodes = pyDictGetInt(paramsDict, "out_nodes");
 }
 
-void FFCLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
+void CCCPLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
 	// input is pixels*_in_nodes*channels x batch_num
 	// output is pixels*_out_nodes*channels x batch_num
 	// First reshape the input into channels*in_nodes x batchnum*pixels
@@ -83,7 +83,7 @@ void FFCLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
 		delete &out;
 		delete &W;
 	}
-    
+
     if (scaleTargets == 0) {// At the first run, the scaleTarget = 0, add the bias. The bias will be added only once.
     	// printf("getActs size %dx%d bias size %dx%d\n", getActs().getNumRows(), getActs().getNumCols(), _biases->getW().getNumRows(), _biases->getW().getNumCols());
         getActs().addVector(_biases->getW());
@@ -100,7 +100,7 @@ void FFCLayer::fpropActs(int inpIdx, float scaleTargets, PASS_TYPE passType) {
       } */
 }
 
-void FFCLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {
+void CCCPLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE passType) {
 	assert(v.getNumCols() % (_channels*_out_nodes) == 0);
 	int pixels = v.getNumCols() / (_channels*_out_nodes);
 
@@ -123,8 +123,8 @@ void FFCLayer::bpropActs(NVMatrix& v, int inpIdx, float scaleTargets, PASS_TYPE 
     _prev[inpIdx]->getActsGrad().reshape(v.getNumElements()/(_channels*_out_nodes*pixels), (_channels*_in_nodes*pixels));
 }
 
-void FFCLayer::bpropBiases(NVMatrix& v, PASS_TYPE passType) { 
-    // Is the numCases the number of samples ? 
+void CCCPLayer::bpropBiases(NVMatrix& v, PASS_TYPE passType) {
+    // Is the numCases the number of samples ?
     // Seems possible. If so, how does the other layers whose output for a single sample is a matrix pass the matrix of multiple samples?
     // Are they all unfolded to a vector?
 	int numCases = v.getNumRows();
@@ -140,7 +140,7 @@ void FFCLayer::bpropBiases(NVMatrix& v, PASS_TYPE passType) {
     v.reshape(v.getNumElements()/(_channels*pixels*_out_nodes), (_channels*pixels*_out_nodes));
 }
 
-void FFCLayer::bpropWeights(NVMatrix& v, int inpIdx, PASS_TYPE passType) {
+void CCCPLayer::bpropWeights(NVMatrix& v, int inpIdx, PASS_TYPE passType) {
 
     // Judging from this function and the above one, each row of the matrix v is a sample.
     // Which means that it is quite possible that all the inputs and outputs are unfolded version of the activations.
@@ -186,8 +186,8 @@ Layer* CreateGroupSparsityInLabelCostLayer(ConvNet* convNet, PyObject* paramsDic
 	return new GroupSparsityInLabelCostLayer(convNet, paramsDict);
 }
 
-Layer* CreateFFCLayer(ConvNet* convNet, PyObject* paramsDict) {
-	return new FFCLayer(convNet, paramsDict);
+Layer* CreateCCCPLayer(ConvNet* convNet, PyObject* paramsDict) {
+	return new CCCPLayer(convNet, paramsDict);
 }
 
 Neuron* CreateDropoutNeuron(PyObject* neuronParamsDict) {
@@ -202,7 +202,7 @@ std::map<string, layerConFunc> layerConstructor(){
 	std::cout<<"Getting the layer constructors inside this shared library"<<std::endl;
 	std::map<string, layerConFunc> ret;
 	ret["cost.gsinlabel"] = &CreateGroupSparsityInLabelCostLayer;
-	ret["ffc"] = &CreateFFCLayer;
+	ret["cccp"] = &CreateCCCPLayer;
 	return ret;
 }
 

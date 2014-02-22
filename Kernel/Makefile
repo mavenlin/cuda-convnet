@@ -20,7 +20,7 @@ CCFILES				:= $(shell echo src/matrix/*.cpp)
 C_DEPS				:= $(shell echo include/matrix/*.h include/convnet/*.h)
 
 include common-gcc-cuda-4.0.mk
-	
+
 makedirectories:
 	$(VERBOSE)mkdir -p $(LIBDIR)
 	$(VERBOSE)mkdir -p $(OBJDIR)/src/conv
@@ -28,5 +28,5 @@ makedirectories:
 	$(VERBOSE)mkdir -p $(OBJDIR)/src/data
 	$(VERBOSE)mkdir -p $(OBJDIR)/src/matrix
 	$(VERBOSE)mkdir -p $(OBJDIR)/src/layers
-	$(VERBOSE)mkdir -p $(OBJDIR)/src/convnet	
+	$(VERBOSE)mkdir -p $(OBJDIR)/src/convnet
 	$(VERBOSE)mkdir -p $(TARGETDIR)
