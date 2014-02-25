@@ -27,7 +27,7 @@ the data
 The datasets are preprocessed according to [maxout networks](http://arxiv.org/abs/1302.4389) using the python code in pylearn. How to preprocess the data is detailed [here](https://github.com/lisa-lab/pylearn2/tree/master/pylearn2/scripts/papers/maxout).
 However, things are complicated because cuda-convnet has a different data format than pylearn, the way to dump cuda-convnet usable data is [here](https://code.google.com/p/cuda-convnet/wiki/Data).
 
-The preprocessed [CIFAR-10](https://drive.google.com/file/d/0B5bEhIhshfIeNkFqS0pjeHg1Tm8/edit?usp=sharing), [CIFAR-100](https://drive.google.com/file/d/0B5bEhIhshfIeQzlrd2tEVTc3Z2M/edit?usp=sharing) and [MNIST](https://drive.google.com/file/d/0B5bEhIhshfIeeXAzS183VkhWUmM/edit?usp=sharing) datasets are available on my google drive, but SVHN will not as it is around 20G after preprocessing.
+The preprocessed [CIFAR-10](https://drive.google.com/file/d/0B5bEhIhshfIeNkFqS0pjeHg1Tm8/edit?usp=sharing), [CIFAR-100](https://drive.google.com/file/d/0B5bEhIhshfIeQzlrd2tEVTc3Z2M/edit?usp=sharing) and [MNIST](https://drive.google.com/file/d/0B5bEhIhshfIeeXAzS183VkhWUmM/edit?usp=sharing) datasets are available on my google drive (just follow the link), but SVHN will not as it is around 20G after preprocessing.
 
 Here is an example code to convert the pylearn preprocessed train.pkl and test.pkl to cuda-convnet data_batch_x files for CIFAR-10 data.
 ```
