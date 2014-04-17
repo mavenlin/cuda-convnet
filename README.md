@@ -1,3 +1,12 @@
+NIN is now in my fork of caffe
+==============================
+An implementation of NIN is now in my fork of caffe cccp branch.
+it is called cccp layer, which is short for cascadable cross channel parametric pooling.
+It achieves slightly worse result on cifar10 than cuda-convnet with unknown reason.
+The cuda-convnet version of NIN has been very robust, I ran many times on CIFAR-10 and it all gets good result.
+So if your result is not as good, don't hesitate to contact me and we'll figure out why.
+
+
 cuda-convnet
 ============
 
